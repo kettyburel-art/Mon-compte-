@@ -187,6 +187,19 @@ input:focus,select:focus{border-color:var(--accent);}
 .prev-info-card .label{font-size:0.66rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:5px;}
 .prev-info-card .val{font-family:monospace;font-size:1.1rem;font-weight:600;}
 .prev-edf-alert{background:#fff8e1;border:1px solid #f5e0a0;border-radius:10px;padding:11px 13px;margin-bottom:14px;font-size:0.8rem;line-height:1.5;}
+.graph-bar-wrap{margin-bottom:8px;}
+.graph-label{font-size:0.75rem;color:var(--muted);margin-bottom:3px;display:flex;justify-content:space-between;}
+.graph-bar-bg{height:22px;background:var(--cream);border-radius:6px;overflow:hidden;}
+.graph-bar-fill{height:22px;border-radius:6px;display:flex;align-items:center;padding-left:8px;font-size:0.72rem;font-weight:600;color:white;transition:width 0.6s ease;min-width:2px;}
+.graph-month-label{font-size:0.7rem;font-family:monospace;color:var(--muted);}
+.obj-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;}
+.obj-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.obj-name{font-size:0.9rem;font-weight:600;}
+.obj-amounts{font-family:monospace;font-size:0.82rem;color:var(--muted);}
+.obj-bar-bg{height:10px;background:var(--cream);border-radius:5px;overflow:hidden;margin-bottom:6px;}
+.obj-bar-fill{height:10px;border-radius:5px;transition:width 0.6s;}
+.obj-footer{display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);}
+.obj-eta{font-size:0.78rem;margin-top:8px;padding:8px 10px;background:var(--cream);border-radius:8px;color:var(--ink);}
 .save-indicator{position:fixed;bottom:12px;right:12px;background:var(--ink);color:#6ecba0;font-size:0.66rem;padding:5px 11px;border-radius:16px;opacity:0;transition:opacity 0.3s;pointer-events:none;font-family:'DM Mono',monospace;z-index:999;}
 .save-indicator.show{opacity:1;}
 .empty-state{text-align:center;padding:32px 12px;color:var(--muted);}
@@ -218,10 +231,10 @@ input:focus,select:focus{border-color:var(--accent);}
       <div style="display:flex;gap:14px;align-items:flex-end;justify-content:flex-end">
         <div>
           <div class="solde-label">💳 Nickel</div>
-          <div class="solde-amount positive" id="headerSolde" style="font-size:1.1rem">14,12 &euro;</div>
+          <div class="solde-amount positive" id="headerSolde" style="font-size:1.1rem">15,21 &euro;</div>
         </div>
-        <div>
-          <div class="solde-label">💛 Revolut</div>
+        <div onclick="editRevolut()" style="cursor:pointer" title="Appuyer pour modifier">
+          <div class="solde-label">💛 Revolut ✏️</div>
           <div class="solde-amount positive" id="headerRevolut" style="font-size:1.1rem">40,65 &euro;</div>
         </div>
       </div>
@@ -415,6 +428,43 @@ input:focus,select:focus{border-color:var(--accent);}
   </div>
 </div>
 
+<!-- GRAPHIQUE -->
+<div id="panel-graphique" class="panel">
+  <div class="card-box">
+    <h2>&#128200; &Eacute;volution mensuelle</h2>
+    <div class="filter-row" style="margin-bottom:14px">
+      <label>Afficher :</label>
+      <select id="graphType" onchange="renderGraphique()">
+        <option value="balance">Balance mensuelle</option>
+        <option value="depenses">D&eacute;penses par cat&eacute;gorie</option>
+        <option value="revenus">Revenus vs D&eacute;penses</option>
+      </select>
+    </div>
+    <div id="graphContent"></div>
+  </div>
+</div>
+
+<!-- OBJECTIF -->
+<div id="panel-objectif" class="panel">
+  <div class="card-box">
+    <h2>&#127919; Objectif &eacute;pargne</h2>
+    <div id="objectifContent"></div>
+    <div style="margin-top:16px;background:var(--paper);border:1px dashed var(--border);border-radius:10px;padding:14px">
+      <div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:10px">D&eacute;finir un objectif</div>
+      <div class="form-row">
+        <div><label>Nom de l'objectif</label><input type="text" id="objNom" placeholder="ex: Vacances, Voiture..."></div>
+        <div><label>Montant cible (&euro;)</label><input type="number" id="objMontant" step="10" placeholder="ex: 1000"></div>
+      </div>
+      <div class="form-row">
+        <div><label>&Eacute;pargne mensuelle (&euro;)</label><input type="number" id="objMensuel" step="10" placeholder="ex: 50"></div>
+        <div><label>D&eacute;j&agrave; &eacute;pargn&eacute; (&euro;)</label><input type="number" id="objActuel" step="10" placeholder="0" value="0"></div>
+      </div>
+      <button class="submit-btn" onclick="addObjectif()">Cr&eacute;er l'objectif</button>
+      <span id="objMsg" style="margin-left:10px;font-size:0.78rem"></span>
+    </div>
+  </div>
+</div>
+
 <div id="panel-ajouter" class="panel">
   <div class="card-box">
     <h2>Nouvelle op&eacute;ration</h2>
@@ -528,6 +578,8 @@ function initOps() {
 (function init(){
   document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
   initOps();
+  loadRevolutSolde();
+  loadObjectifs();
   // Réinitialiser les enveloppes avril avec le plan Nickel/Revolut
   enveloppes = enveloppes.filter(function(e){ return e.mois !== '2026-04'; });
   var planAvril = [
@@ -572,7 +624,7 @@ function showPanel(name,el) {
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.getElementById('panel-'+name).classList.add('active');
   if(el) el.classList.add('active');
-  var r={categories:renderCats,score:renderScore,comparaison:renderComp,budgets:renderBudgets,enveloppes:renderEnv,simulateur:renderSimCats,alertes:checkAlertes,operations:renderOps,previsionnel:renderPrevisionnel};
+  var r={categories:renderCats,score:renderScore,comparaison:renderComp,budgets:renderBudgets,enveloppes:renderEnv,simulateur:renderSimCats,alertes:checkAlertes,operations:renderOps,previsionnel:renderPrevisionnel,graphique:renderGraphique,objectif:renderObjectif};
   if(r[name]) r[name]();
 }
 function setSens(s) {
@@ -582,7 +634,7 @@ function setSens(s) {
 }
 function updateSolde() {
   var uf=ops.filter(function(o){return o.source==='user';}).reduce(function(s,o){return s+o.montant;},0);
-  var d=14.12+uf;
+  var d=15.21+uf;
   var el=document.getElementById('headerSolde');
   el.textContent=d.toFixed(2).replace('.',',')+' €';
   el.className='solde-amount '+(d>=0?'positive':'negative');
@@ -1247,6 +1299,15 @@ function buildRaw() {
   {d:'2026-03-28',l:'Franprix Maisons-Alfort',m:-11.58,c:'Alimentation',mode:'CB'},
   {d:'2026-03-28',l:'Le Condorcet Maisons-Alfort',m:-23.00,c:'Tabac / Presse',mode:'CB'},
   {d:'2026-03-28',l:'Abonnement Premium Revolut',m:-9.99,c:'Abonnements',mode:'Prelevement'},
+  {d:'2026-03-28',l:'Uber Eats',m:-18.91,c:'Restauration / Livraison',mode:'CB'},
+  {d:'2026-03-28',l:'Virement depuis Revolut',m:10.00,c:'Virements reçus',mode:'Virement'},
+  {d:'2026-03-29',l:'Virement depuis Revolut',m:20.00,c:'Virements reçus',mode:'Virement'},
+  {d:'2026-03-29',l:'Virement depuis Revolut',m:10.00,c:'Virements reçus',mode:'Virement'},
+  {d:'2026-03-29',l:'Normal Créteil',m:-5.00,c:'Shopping autres',mode:'CB'},
+  {d:'2026-03-29',l:'Carrefour Créteil',m:-18.01,c:'Alimentation',mode:'CB'},
+  {d:'2026-03-29',l:'Virement Nickel (émis)',m:-5.00,c:'Virements envoyés',mode:'Virement'},
+  {d:'2026-03-30',l:'Amazon Prime',m:-6.99,c:'Abonnements',mode:'CB'},
+  {d:'2026-03-31',l:'Virement Yoann Goret',m:15.00,c:'Virements reçus',mode:'Virement'},
   // === AVRIL 2026 ===
   {d:'2026-04-01',l:'Amazon',m:-27.85,c:'Shopping autres',mode:'CB'},
   {d:'2026-04-01',l:'Cdiscount',m:-93.39,c:'Shopping autres',mode:'CB'},
@@ -1423,6 +1484,176 @@ function loadPlanRecommande() {
   msg.textContent = '✓ Plan avril chargé — 12 enveloppes';
   document.body.appendChild(msg);
   setTimeout(function(){ document.body.removeChild(msg); }, 2500);
+}
+
+
+// ── SOLDE REVOLUT MODIFIABLE ──────────────────
+function editRevolut() {
+  var cur = parseFloat(localStorage.getItem('ketty_revolut') || '40.65');
+  var val = prompt('Solde Revolut actuel (€) :', cur.toFixed(2));
+  if (val === null) return;
+  var n = parseFloat(val.replace(',','.'));
+  if (isNaN(n)) return;
+  localStorage.setItem('ketty_revolut', n.toString());
+  document.getElementById('headerRevolut').textContent = n.toFixed(2).replace('.',',') + ' €';
+  var nickel = parseFloat(document.getElementById('headerSolde').textContent.replace(',','.').replace(' €','')) || 0;
+  var el = document.getElementById('headerTotal');
+  if (el) el.textContent = (nickel + n).toFixed(2).replace('.',',') + ' €';
+}
+
+function loadRevolutSolde() {
+  var saved = localStorage.getItem('ketty_revolut');
+  if (saved) {
+    var n = parseFloat(saved);
+    document.getElementById('headerRevolut').textContent = n.toFixed(2).replace('.',',') + ' €';
+  }
+}
+
+// ── GRAPHIQUE ─────────────────────────────────
+function renderGraphique() {
+  var type = document.getElementById('graphType').value;
+  var months = ['2026-01','2026-02','2026-03','2026-04'];
+  var labels = {'2026-01':'Janv.','2026-02':'Févr.','2026-03':'Mars','2026-04':'Avril'};
+  var el = document.getElementById('graphContent');
+  var h = '';
+
+  if (type === 'balance') {
+    var max = 0;
+    var data = months.map(function(m) {
+      var s = getMoStats(m);
+      if (Math.abs(s.solde) > max) max = Math.abs(s.solde);
+      return {m:m, v:s.solde};
+    });
+    max = max || 1;
+    h += '<div style="margin-bottom:8px;font-size:0.72rem;color:var(--muted)">Balance = Revenus - Dépenses</div>';
+    data.forEach(function(d) {
+      var pct = Math.round((Math.abs(d.v)/max)*100);
+      var color = d.v >= 0 ? '#6ecba0' : '#e07070';
+      h += '<div class="graph-bar-wrap">';
+      h += '<div class="graph-label"><span>'+( labels[d.m]||d.m)+'</span><span style="color:'+color+';font-weight:600">'+(d.v>=0?'+':'')+d.v.toFixed(0)+'€</span></div>';
+      h += '<div class="graph-bar-bg"><div class="graph-bar-fill" style="width:'+pct+'%;background:'+color+'">'+(pct>15?(d.v>=0?'+':'')+d.v.toFixed(0)+'€':'')+'</div></div>';
+      h += '</div>';
+    });
+  } else if (type === 'revenus') {
+    var maxRV = 0;
+    var dataRV = months.map(function(m) {
+      var s = getMoStats(m);
+      if (s.credit > maxRV) maxRV = s.credit;
+      if (Math.abs(s.debit) > maxRV) maxRV = Math.abs(s.debit);
+      return {m:m, rev:s.credit, dep:Math.abs(s.debit)};
+    });
+    maxRV = maxRV || 1;
+    dataRV.forEach(function(d) {
+      h += '<div class="graph-bar-wrap" style="margin-bottom:12px">';
+      h += '<div class="graph-label"><span style="font-weight:600">'+( labels[d.m]||d.m)+'</span></div>';
+      var pR = Math.round((d.rev/maxRV)*100);
+      var pD = Math.round((d.dep/maxRV)*100);
+      h += '<div class="graph-label"><span>Revenus</span><span style="color:#6ecba0">+'+d.rev.toFixed(0)+'€</span></div>';
+      h += '<div class="graph-bar-bg" style="margin-bottom:4px"><div class="graph-bar-fill" style="width:'+pR+'%;background:#6ecba0"></div></div>';
+      h += '<div class="graph-label"><span>Dépenses</span><span style="color:#e07070">-'+d.dep.toFixed(0)+'€</span></div>';
+      h += '<div class="graph-bar-bg"><div class="graph-bar-fill" style="width:'+pD+'%;background:#e07070"></div></div>';
+      h += '</div>';
+    });
+  } else {
+    // depenses par categorie
+    var catTotals = {};
+    months.forEach(function(m) {
+      ops.filter(function(o){return o.date.indexOf(m)===0&&o.montant<0;}).forEach(function(o){
+        if (!catTotals[o.categorie]) catTotals[o.categorie] = 0;
+        catTotals[o.categorie] += Math.abs(o.montant);
+      });
+    });
+    var sorted = Object.entries(catTotals).sort(function(a,b){return b[1]-a[1];}).slice(0,10);
+    var maxC = sorted.length ? sorted[0][1] : 1;
+    h += '<div style="margin-bottom:8px;font-size:0.72rem;color:var(--muted)">Total sur les 4 derniers mois</div>';
+    sorted.forEach(function(e) {
+      var pct = Math.round((e[1]/maxC)*100);
+      h += '<div class="graph-bar-wrap">';
+      h += '<div class="graph-label"><span>'+gi(e[0])+' '+e[0]+'</span><span style="font-weight:600">'+e[1].toFixed(0)+'€</span></div>';
+      h += '<div class="graph-bar-bg"><div class="graph-bar-fill" style="width:'+pct+'%;background:'+gc(e[0])+'"></div></div>';
+      h += '</div>';
+    });
+  }
+
+  el.innerHTML = h || '<div class="empty-state"><div class="emoji">📊</div><p>Pas assez de données.</p></div>';
+}
+
+// ── OBJECTIF ÉPARGNE ──────────────────────────
+var objectifs = [];
+
+function loadObjectifs() {
+  try { objectifs = JSON.parse(localStorage.getItem('ketty_objectifs') || '[]'); } catch(e) { objectifs = []; }
+}
+function saveObjectifs() {
+  try { localStorage.setItem('ketty_objectifs', JSON.stringify(objectifs)); showSave(); } catch(e) {}
+}
+
+function addObjectif() {
+  var nom = document.getElementById('objNom').value.trim();
+  var montant = parseFloat(document.getElementById('objMontant').value);
+  var mensuel = parseFloat(document.getElementById('objMensuel').value);
+  var actuel = parseFloat(document.getElementById('objActuel').value) || 0;
+  var msg = document.getElementById('objMsg');
+  if (!nom || isNaN(montant) || montant <= 0 || isNaN(mensuel) || mensuel <= 0) {
+    msg.style.color='var(--red)'; msg.textContent='⚠️ Remplis tous les champs.';
+    setTimeout(function(){msg.textContent='';},3000); return;
+  }
+  objectifs.push({nom:nom, montant:montant, mensuel:mensuel, actuel:actuel, date:new Date().toISOString().split('T')[0]});
+  document.getElementById('objNom').value='';
+  document.getElementById('objMontant').value='';
+  document.getElementById('objMensuel').value='';
+  document.getElementById('objActuel').value='0';
+  msg.style.color='var(--green)'; msg.textContent='✓ Objectif créé !';
+  setTimeout(function(){msg.textContent='';},2500);
+  saveObjectifs(); renderObjectif();
+}
+
+function deleteObjectif(i) {
+  objectifs.splice(i,1); saveObjectifs(); renderObjectif();
+}
+
+function updateObjectifActuel(i, val) {
+  var n = parseFloat(val);
+  if (!isNaN(n)) { objectifs[i].actuel = n; saveObjectifs(); renderObjectif(); }
+}
+
+function renderObjectif() {
+  loadObjectifs();
+  var el = document.getElementById('objectifContent');
+  if (!objectifs.length) {
+    el.innerHTML = '<div class="empty-state"><div class="emoji">🎯</div><p>Aucun objectif défini.<br>Crée ton premier objectif ci-dessous !</p></div>';
+    return;
+  }
+  var h = '';
+  objectifs.forEach(function(obj, i) {
+    var pct = Math.min(100, Math.round((obj.actuel/obj.montant)*100));
+    var reste = obj.montant - obj.actuel;
+    var moisRestants = Math.ceil(reste / obj.mensuel);
+    var color = pct < 50 ? '#c9a84c' : pct < 80 ? '#2980b9' : '#6ecba0';
+    var eta = '';
+    if (moisRestants > 0) {
+      var dateEta = new Date();
+      dateEta.setMonth(dateEta.getMonth() + moisRestants);
+      var moisNoms = ['jan','fév','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
+      eta = 'À ce rythme : ' + moisNoms[dateEta.getMonth()] + ' ' + dateEta.getFullYear() + ' (' + moisRestants + ' mois)';
+    } else {
+      eta = '🎉 Objectif atteint !';
+    }
+    h += '<div class="obj-card">';
+    h += '<div class="obj-header"><div class="obj-name">🎯 '+obj.nom+'</div>';
+    h += '<div style="display:flex;align-items:center;gap:8px">';
+    h += '<div class="obj-amounts"><strong>'+obj.actuel.toFixed(0)+'€</strong> / '+obj.montant.toFixed(0)+'€</div>';
+    h += '<button onclick="deleteObjectif('+i+')" style="background:none;border:none;color:var(--border);cursor:pointer;font-size:0.8rem">✕</button></div></div>';
+    h += '<div class="obj-bar-bg"><div class="obj-bar-fill" style="width:'+pct+'%;background:'+color+'"></div></div>';
+    h += '<div class="obj-footer"><span>'+pct+'% atteint</span><span>Reste : '+fmtA(reste)+'</span></div>';
+    h += '<div class="obj-eta">'+eta+'</div>';
+    h += '<div style="margin-top:8px;display:flex;align-items:center;gap:8px;font-size:0.78rem">';
+    h += '<label style="margin:0;text-transform:none;letter-spacing:0">Mettre à jour :</label>';
+    h += '<input type="number" value="'+obj.actuel+'" step="10" min="0" max="'+obj.montant+'" onchange="updateObjectifActuel('+i+',this.value)" style="width:90px;padding:5px 8px;font-size:0.82rem">';
+    h += '<span style="color:var(--muted)">€</span></div>';
+    h += '</div>';
+  });
+  el.innerHTML = h;
 }
 
 </script>
