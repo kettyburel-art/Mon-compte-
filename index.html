@@ -200,6 +200,36 @@ input:focus,select:focus{border-color:var(--accent);}
 .obj-bar-fill{height:10px;border-radius:5px;transition:width 0.6s;}
 .obj-footer{display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);}
 .obj-eta{font-size:0.78rem;margin-top:8px;padding:8px 10px;background:var(--cream);border-radius:8px;color:var(--ink);}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+@media(max-width:400px){.dash-grid{grid-template-columns:1fr;}}
+.dash-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;position:relative;overflow:hidden;}
+.dash-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.dash-card.blue::before{background:#2980b9;}
+.dash-card.gold::before{background:var(--gold);}
+.dash-card.green::before{background:var(--accent2);}
+.dash-card.red::before{background:var(--red);}
+.dash-card-icon{font-size:1.6rem;margin-bottom:6px;}
+.dash-card-label{font-size:0.66rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:4px;}
+.dash-card-value{font-family:'DM Mono',monospace;font-size:1.2rem;font-weight:600;}
+.dash-card-sub{font-size:0.68rem;color:var(--muted);margin-top:3px;}
+.dash-section-title{font-family:'Playfair Display',serif;font-size:0.92rem;font-weight:600;color:var(--muted);margin:16px 0 10px;display:flex;align-items:center;gap:7px;}
+.dash-alert-item{display:flex;align-items:flex-start;gap:10px;padding:10px 13px;border-radius:10px;margin-bottom:7px;border:1px solid;}
+.dash-alert-item.danger{background:#fff5f5;border-color:#f5c0c0;}
+.dash-alert-item.warning{background:#fffbf0;border-color:#f5e0a0;}
+.dash-alert-item.info{background:#f0faf5;border-color:#a0d8bc;}
+.dash-alert-icon{font-size:1.1rem;flex-shrink:0;}
+.dash-alert-title{font-size:0.82rem;font-weight:600;}
+.dash-alert-desc{font-size:0.72rem;color:var(--muted);margin-top:2px;line-height:1.4;}
+.dash-mini-bar-wrap{margin-bottom:7px;}
+.dash-mini-bar-label{display:flex;justify-content:space-between;font-size:0.72rem;margin-bottom:3px;}
+.dash-mini-bar-bg{height:6px;background:var(--cream);border-radius:3px;overflow:hidden;}
+.dash-mini-bar-fill{height:6px;border-radius:3px;transition:width 0.5s;}
+.dash-welcome{background:var(--ink);color:var(--paper);border-radius:14px;padding:18px 18px 14px;margin-bottom:16px;}
+.dash-welcome h2{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:600;margin-bottom:4px;}
+.dash-welcome p{font-size:0.76rem;color:#9090a0;line-height:1.5;}
+.dash-quick-btns{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.dash-quick-btn{background:rgba(255,255,255,0.1);color:var(--paper);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:6px 14px;font-family:'DM Sans',sans-serif;font-size:0.76rem;cursor:pointer;transition:all 0.2s;}
+.dash-quick-btn:hover{background:rgba(255,255,255,0.2);}
 .save-indicator{position:fixed;bottom:12px;right:12px;background:var(--ink);color:#6ecba0;font-size:0.66rem;padding:5px 11px;border-radius:16px;opacity:0;transition:opacity 0.3s;pointer-events:none;font-family:'DM Mono',monospace;z-index:999;}
 .save-indicator.show{opacity:1;}
 .empty-state{text-align:center;padding:32px 12px;color:var(--muted);}
@@ -244,7 +274,8 @@ input:focus,select:focus{border-color:var(--accent);}
 </div>
 
 <div class="tabs">
-  <div class="tab active" onclick="showPanel('operations',this)">&#128203; Op&eacute;r.</div>
+  <div class="tab active" onclick="showPanel('accueil',this)">&#127968; Accueil</div>
+  <div class="tab" onclick="showPanel('operations',this)">&#128203; Op&eacute;r.</div>
   <div class="tab" onclick="showPanel('alertes',this)">&#128276; Alertes</div>
   <div class="tab" onclick="showPanel('enveloppes',this)">&#128179; Envel.</div>
   <div class="tab" onclick="showPanel('simulateur',this)">&#127921; Simul.</div>
@@ -258,7 +289,12 @@ input:focus,select:focus{border-color:var(--accent);}
 
 <div class="main">
 
-<div id="panel-operations" class="panel active">
+<!-- ACCUEIL -->
+<div id="panel-accueil" class="panel active">
+  <div id="accueilContent"></div>
+</div>
+
+<div id="panel-operations" class="panel">
   <div class="stats-grid" id="statsGrid"></div>
   <div class="filter-bar">
     <input type="text" id="searchInput" placeholder="Rechercher..." oninput="renderOps()" style="min-width:115px">
@@ -580,6 +616,7 @@ function initOps() {
   initOps();
   loadRevolutSolde();
   loadObjectifs();
+  renderAccueil();
   // Réinitialiser les enveloppes avril avec le plan Nickel/Revolut
   enveloppes = enveloppes.filter(function(e){ return e.mois !== '2026-04'; });
   var planAvril = [
@@ -624,7 +661,7 @@ function showPanel(name,el) {
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.getElementById('panel-'+name).classList.add('active');
   if(el) el.classList.add('active');
-  var r={categories:renderCats,score:renderScore,comparaison:renderComp,budgets:renderBudgets,enveloppes:renderEnv,simulateur:renderSimCats,alertes:checkAlertes,operations:renderOps,previsionnel:renderPrevisionnel,graphique:renderGraphique,objectif:renderObjectif};
+  var r={accueil:renderAccueil,categories:renderCats,score:renderScore,comparaison:renderComp,budgets:renderBudgets,enveloppes:renderEnv,simulateur:renderSimCats,alertes:checkAlertes,operations:renderOps,previsionnel:renderPrevisionnel,graphique:renderGraphique,objectif:renderObjectif};
   if(r[name]) r[name]();
 }
 function setSens(s) {
@@ -1654,6 +1691,109 @@ function renderObjectif() {
     h += '</div>';
   });
   el.innerHTML = h;
+}
+
+
+// ── PAGE D'ACCUEIL DASHBOARD ──────────────────
+function renderAccueil() {
+  var el = document.getElementById('accueilContent');
+  if (!el) return;
+
+  // Données mois courant (mars) et précédent (février)
+  var moisCur = '2026-03';
+  var moisPrec = '2026-02';
+  var sCur = getMoStats(moisCur);
+  var sPrec = getMoStats(moisPrec);
+  var today = new Date(2026, 2, 31);
+  var jourMois = 31;
+  var jourActuel = 31;
+  var tauxMois = Math.round((jourActuel / jourMois) * 100);
+
+  // Soldes
+  var soldeNickel = parseFloat((document.getElementById('headerSolde').textContent || '0').replace(',','.').replace('€','').trim()) || 15.21;
+  var soldeRevolut = parseFloat(localStorage.getItem('ketty_revolut') || '40.65');
+  var soldeTotal = soldeNickel + soldeRevolut;
+
+  // Alertes
+  var alertes = [];
+  var allB = budgets.concat(enveloppes);
+  allB.filter(function(b){return b.mois===moisCur;}).forEach(function(b){
+    var dep = ops.filter(function(o){return o.date.indexOf(b.mois)===0&&o.categorie===b.cat&&o.montant<0;}).reduce(function(s,o){return s+Math.abs(o.montant);},0);
+    if(dep>b.montant) alertes.push({type:'danger',icon:'🚨',title:'Budget '+b.cat+' dépassé',desc:fmtA(dep)+' / '+fmtA(b.montant)});
+    else if(dep/b.montant>0.8) alertes.push({type:'warning',icon:'⚡',title:b.cat+' à '+Math.round(dep/b.montant*100)+'%',desc:fmtA(dep)+' sur '+fmtA(b.montant)});
+  });
+  var rejets = ops.filter(function(o){return o.date.indexOf(moisCur)===0&&o.libelle.toLowerCase().indexOf('rejet')>=0;});
+  if(rejets.length) alertes.push({type:'danger',icon:'❌',title:rejets.length+' rejet(s) ce mois',desc:'Frais évitables : '+fmtA(rejets.reduce(function(s,o){return s+Math.abs(o.montant);},0))});
+  if(!alertes.length) alertes.push({type:'info',icon:'✅',title:'Tout est OK !',desc:'Aucun budget dépassé ce mois.'});
+
+  // Top 3 dépenses du mois
+  var catTotaux = {};
+  sCur.ops.filter(function(o){return o.montant<0;}).forEach(function(o){
+    if(!catTotaux[o.categorie])catTotaux[o.categorie]=0;
+    catTotaux[o.categorie]+=Math.abs(o.montant);
+  });
+  var top3 = Object.entries(catTotaux).sort(function(a,b){return b[1]-a[1];}).slice(0,3);
+  var maxCat = top3.length ? top3[0][1] : 1;
+
+  // Evolution balance
+  var diffBalance = sCur.solde - sPrec.solde;
+  var diffDep = Math.abs(sCur.debit) - Math.abs(sPrec.debit);
+
+  // Heure du jour
+  var h = new Date().getHours();
+  var salut = h < 12 ? 'Bonjour' : h < 18 ? 'Bon après-midi' : 'Bonsoir';
+
+  var html = '';
+
+  // Welcome banner
+  html += '<div class="dash-welcome">';
+  html += '<h2>'+salut+' Ketty 👋</h2>';
+  html += '<p>Voici un résumé de ta situation financière au <strong style="color:white">31 mars 2026</strong>.</p>';
+  html += '<div class="dash-quick-btns">';
+  html += '<button class="dash-quick-btn" onclick="showPanel(\'ajouter\',null)">➕ Ajouter</button>';
+  html += '<button class="dash-quick-btn" onclick="showPanel(\'enveloppes\',null)">📬 Enveloppes</button>';
+  html += '<button class="dash-quick-btn" onclick="showPanel(\'alertes\',null)">🔔 Alertes</button>';
+  html += '</div></div>';
+
+  // Soldes
+  html += '<div class="dash-section-title">💳 Mes soldes</div>';
+  html += '<div class="dash-grid">';
+  html += '<div class="dash-card blue"><div class="dash-card-icon">💳</div><div class="dash-card-label">Nickel</div><div class="dash-card-value '+(soldeNickel>=0?'':'')+'">'+soldeNickel.toFixed(2).replace('.',',')+'&nbsp;€</div><div class="dash-card-sub">Compte principal</div></div>';
+  html += '<div class="dash-card gold"><div class="dash-card-icon">💛</div><div class="dash-card-label">Revolut</div><div class="dash-card-value">'+soldeRevolut.toFixed(2).replace('.',',')+'&nbsp;€</div><div class="dash-card-sub">3 pockets actives</div></div>';
+  html += '<div class="dash-card '+(soldeTotal>=100?'green':'red')+'"><div class="dash-card-icon">'+(soldeTotal>=100?'💰':'⚠️')+'</div><div class="dash-card-label">Total disponible</div><div class="dash-card-value">'+soldeTotal.toFixed(2).replace('.',',')+'&nbsp;€</div><div class="dash-card-sub">Nickel + Revolut</div></div>';
+  html += '<div class="dash-card '+(sCur.solde>=0?'green':'red')+'"><div class="dash-card-icon">'+(sCur.solde>=0?'📈':'📉')+'</div><div class="dash-card-label">Balance mars</div><div class="dash-card-value">'+(sCur.solde>=0?'+':'')+sCur.solde.toFixed(0)+'&nbsp;€</div><div class="dash-card-sub">'+(diffBalance>=0?'▲ +':' ▼ ')+Math.abs(diffBalance).toFixed(0)+'€ vs fév.</div></div>';
+  html += '</div>';
+
+  // Top dépenses
+  html += '<div class="dash-section-title">🔥 Top dépenses ce mois</div>';
+  html += '<div class="dash-card"><div style="padding:4px 0">';
+  top3.forEach(function(e){
+    var pct = Math.round((e[1]/maxCat)*100);
+    html += '<div class="dash-mini-bar-wrap">';
+    html += '<div class="dash-mini-bar-label"><span>'+gi(e[0])+' '+e[0]+'</span><span style="font-weight:600;font-family:monospace">'+e[1].toFixed(0)+'€</span></div>';
+    html += '<div class="dash-mini-bar-bg"><div class="dash-mini-bar-fill" style="width:'+pct+'%;background:'+gc(e[0])+'"></div></div>';
+    html += '</div>';
+  });
+  html += '</div></div>';
+
+  // Revenus vs Dépenses mars
+  html += '<div class="dash-section-title">📊 Mars en chiffres</div>';
+  html += '<div class="dash-grid">';
+  html += '<div class="dash-card green"><div class="dash-card-icon">💰</div><div class="dash-card-label">Revenus</div><div class="dash-card-value" style="color:var(--green)">+'+sCur.credit.toFixed(0)+'€</div><div class="dash-card-sub">'+(sCur.credit>sPrec.credit?'▲':'▼')+' vs fév. '+sPrec.credit.toFixed(0)+'€</div></div>';
+  html += '<div class="dash-card red"><div class="dash-card-icon">💸</div><div class="dash-card-label">Dépenses</div><div class="dash-card-value" style="color:var(--red)">-'+Math.abs(sCur.debit).toFixed(0)+'€</div><div class="dash-card-sub">'+(diffDep>=0?'▲ +':'▼ ')+Math.abs(diffDep).toFixed(0)+'€ vs fév.</div></div>';
+  html += '</div>';
+
+  // Alertes
+  html += '<div class="dash-section-title">🔔 Alertes</div>';
+  alertes.slice(0,3).forEach(function(a){
+    html += '<div class="dash-alert-item '+a.type+'"><div class="dash-alert-icon">'+a.icon+'</div><div><div class="dash-alert-title">'+a.title+'</div><div class="dash-alert-desc">'+a.desc+'</div></div></div>';
+  });
+
+  // Prochain virement Revolut
+  html += '<div class="dash-section-title">📅 Prochain événement</div>';
+  html += '<div class="dash-card blue"><div style="font-size:0.84rem;font-weight:600">💛 Recharge pockets Revolut</div><div style="font-size:0.76rem;color:var(--muted);margin-top:4px">Le 12 avril · 550€ à virer (+ 50€ épargne)</div><div style="font-size:0.76rem;color:var(--muted);margin-top:2px">🏠 Loyer + ⚖️ Avocat prévus le 10 avril</div></div>';
+
+  el.innerHTML = html;
 }
 
 </script>
