@@ -428,6 +428,119 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
 .shop-usage{font-size:0.6rem;color:var(--leaf-dark);opacity:0.75;margin-top:0.15rem;font-style:italic;line-height:1.4}
 .shop-item{padding:0.55rem 0.75rem}
+
+/* ── JOURNAL NUITS SJSR ── */
+.sleep-card{background:#fff;border-radius:16px;margin:0.8rem 1rem;box-shadow:0 2px 14px rgba(58,40,32,0.07);overflow:hidden}
+.sleep-card-header{padding:0.85rem 1rem 0.5rem;background:linear-gradient(135deg,rgba(44,37,66,0.04),rgba(232,137,154,0.05))}
+.sleep-card-title{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--text);display:flex;align-items:center;gap:0.5rem}
+.sleep-date-nav{display:flex;align-items:center;justify-content:space-between;padding:0.5rem 1rem;border-bottom:1px solid rgba(58,40,32,0.05)}
+.sleep-date-label{font-size:0.75rem;font-weight:700;color:var(--text)}
+.sleep-nav-btn{background:none;border:none;font-size:1.1rem;cursor:pointer;color:var(--muted);padding:0.2rem 0.5rem}
+
+.sleep-section{padding:0.75rem 1rem;border-bottom:1px solid rgba(58,40,32,0.05)}
+.sleep-section:last-child{border-bottom:none}
+.sleep-section-label{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;color:var(--muted);margin-bottom:0.6rem;display:flex;align-items:center;gap:0.4rem}
+
+.sleep-time-row{display:flex;gap:0.6rem;margin-bottom:0.5rem}
+.sleep-time-field{flex:1}
+.sleep-time-field label{display:block;font-size:0.62rem;color:var(--muted);margin-bottom:0.3rem;font-weight:600}
+.sleep-time-field input[type="time"]{
+  width:100%;border:1.5px solid rgba(58,40,32,0.12);border-radius:10px;
+  padding:0.5rem 0.6rem;font-size:0.85rem;font-weight:700;
+  color:var(--text);background:#fafaf9;outline:none;
+  font-family:'Cormorant Garamond',serif;
+}
+.sleep-time-field input[type="time"]:focus{border-color:var(--blossom-deep)}
+
+.sleep-calc{
+  background:linear-gradient(135deg,rgba(44,37,66,0.06),rgba(107,158,120,0.06));
+  border-radius:10px;padding:0.6rem 0.8rem;margin:0.4rem 0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.sleep-calc-label{font-size:0.62rem;color:var(--muted);font-weight:600}
+.sleep-calc-value{font-size:1rem;font-weight:700;color:var(--night);font-family:'Cormorant Garamond',serif}
+.sleep-calc-value.good{color:var(--leaf-dark)}
+.sleep-calc-value.warning{color:#c47a2a}
+.sleep-calc-value.bad{color:#b03030}
+
+.sleep-stars{display:flex;gap:0.4rem;margin:0.3rem 0}
+.sleep-star{font-size:1.4rem;cursor:pointer;opacity:0.3;transition:all 0.15s;line-height:1}
+.sleep-star.active{opacity:1}
+
+.sleep-quality-labels{display:flex;justify-content:space-between;font-size:0.55rem;color:var(--muted);margin-top:0.1rem}
+
+.sleep-feeling-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.4rem;margin:0.3rem 0}
+.sleep-feeling-btn{
+  border:1.5px solid rgba(58,40,32,0.1);border-radius:10px;
+  padding:0.5rem 0.3rem;text-align:center;cursor:pointer;
+  background:#fafaf9;transition:all 0.15s;
+}
+.sleep-feeling-btn.selected{background:linear-gradient(135deg,var(--blossom-deep),#a04060);border-color:transparent;color:#fff}
+.sleep-feeling-btn .sfb-icon{font-size:1.1rem;display:block;margin-bottom:0.15rem}
+.sleep-feeling-btn .sfb-label{font-size:0.58rem;font-weight:600}
+
+.pain-slider-wrap{margin:0.3rem 0}
+.pain-slider-labels{display:flex;justify-content:space-between;font-size:0.55rem;color:var(--muted);margin-top:0.2rem}
+.pain-val-display{
+  font-size:1.1rem;font-weight:700;font-family:'Cormorant Garamond',serif;
+  text-align:center;margin:0.3rem 0 0.5rem;
+}
+.pain-val-display.p0{color:var(--leaf-dark)}
+.pain-val-display.p1,.pain-val-display.p2,.pain-val-display.p3{color:#c8a050}
+.pain-val-display.p4,.pain-val-display.p5,.pain-val-display.p6{color:#c47a2a}
+.pain-val-display.p7,.pain-val-display.p8{color:#c04040}
+.pain-val-display.p9,.pain-val-display.p10{color:#8b0000}
+input[type="range"].pain-range{
+  width:100%;-webkit-appearance:none;height:6px;
+  border-radius:3px;background:linear-gradient(90deg,var(--leaf-mid),#f4a43a,#c04040);
+  outline:none;
+}
+input[type="range"].pain-range::-webkit-slider-thumb{
+  -webkit-appearance:none;width:22px;height:22px;
+  border-radius:50%;background:#fff;border:3px solid var(--blossom-deep);
+  cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15);
+}
+
+.sleep-notes-field{
+  width:100%;border:1.5px solid rgba(58,40,32,0.12);border-radius:10px;
+  padding:0.6rem 0.8rem;font-size:0.75rem;color:var(--text);
+  background:#fafaf9;outline:none;resize:none;
+  font-family:inherit;min-height:70px;box-sizing:border-box;
+}
+.sleep-notes-field:focus{border-color:var(--blossom-deep)}
+
+.sleep-save-btn{
+  display:block;width:calc(100% - 2rem);margin:0.5rem 1rem 1rem;
+  background:linear-gradient(135deg,var(--blossom-deep),#a04060);
+  color:#fff;border:none;border-radius:12px;padding:0.75rem;
+  font-size:0.8rem;font-weight:700;cursor:pointer;letter-spacing:0.05em;
+}
+
+/* ── STATS HEBDO ── */
+.sleep-stats-card{background:#fff;border-radius:16px;margin:0.8rem 1rem;box-shadow:0 2px 14px rgba(58,40,32,0.07);padding:1rem}
+.sleep-stats-title{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--text);margin-bottom:0.8rem;display:flex;align-items:center;gap:0.5rem}
+.stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:0.6rem;margin-bottom:0.8rem}
+.stat-box{background:linear-gradient(135deg,rgba(107,158,120,0.07),rgba(212,168,67,0.05));border-radius:12px;padding:0.7rem;text-align:center}
+.stat-box-val{font-size:1.3rem;font-weight:700;font-family:'Cormorant Garamond',serif;color:var(--text)}
+.stat-box-label{font-size:0.58rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-top:0.15rem}
+
+.sleep-history-row{
+  display:flex;align-items:center;gap:0.5rem;
+  padding:0.5rem 0;border-bottom:1px solid rgba(58,40,32,0.05);
+}
+.sleep-history-row:last-child{border-bottom:none}
+.shr-date{font-size:0.65rem;font-weight:700;color:var(--muted);width:50px;flex-shrink:0}
+.shr-hours{font-size:0.75rem;font-weight:700;color:var(--text);width:45px;flex-shrink:0}
+.shr-stars{font-size:0.7rem;flex-shrink:0;width:65px}
+.shr-pain{font-size:0.65rem;font-weight:700;width:35px;flex-shrink:0;text-align:center}
+.shr-feeling{font-size:0.9rem;flex-shrink:0}
+.shr-bar{flex:1;height:6px;border-radius:3px;background:rgba(58,40,32,0.06)}
+.shr-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--leaf-mid),var(--pistil))}
+
+.week-selector{display:flex;gap:0.4rem;padding:0 1rem 0.5rem;overflow-x:auto}
+.week-sel-btn{flex-shrink:0;background:#fff;border:1.5px solid rgba(58,40,32,0.1);border-radius:8px;padding:0.35rem 0.7rem;font-size:0.65rem;font-weight:700;cursor:pointer;white-space:nowrap}
+.week-sel-btn.active{background:var(--blossom-deep);border-color:var(--blossom-deep);color:#fff}
+
 .sect-title{font-size:0.57rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);font-weight:700;margin:0.75rem 1rem 0.35rem}
 
 /* ── RECETTE DÉTAIL ── */
@@ -708,7 +821,7 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
   </div>
 </div>
 
-id="view-tips" style="display:none">
+<div id="view-tips" style="display:none">
   <div class="tips-section">
 
     <div class="tip-card tdah-card" data-flower="🧠">
@@ -806,166 +919,192 @@ id="view-tips" style="display:none">
 
 <!-- JOURNAL VIEW -->
 <div id="view-journal" style="display:none">
+
+  <!-- Timer Infusion -->
   <div class="journal-section">
-    <!-- Timer infusion -->
     <div class="timer-card">
       <div class="timer-title">🍵 Timer Infusion / Lait d'Or</div>
       <div class="timer-sub">Appuyez sur Démarrer quand vous versez l'eau</div>
-      <div class="timer-circle">
-        <svg width="118" height="118" viewBox="0 0 118 118">
-          <circle cx="59" cy="59" r="54" id="timerCircle"/>
-        </svg>
-        <div>
-          <div class="timer-display" id="timerDisplay">8:00</div>
-          <div class="timer-label-small">minutes</div>
-        </div>
+      <div class="timer-countdown" id="timerCount">8:00</div>
+      <div class="timer-step" id="timerStep">🌸 Versez l\'eau à 80°C et appuyez sur Démarrer</div>
+      <div class="timer-controls">
+        <button class="timer-btn" id="timerBtn" onclick="toggleTimer()">▶ Démarrer</button>
+        <button class="timer-btn timer-btn-sec" onclick="resetTimer()">↺ Reset</button>
       </div>
-      <div class="timer-btns">
-        <button class="timer-btn tbtn-start" id="timerBtn" onclick="toggleTimer()">▶ Démarrer</button>
-        <button class="timer-btn tbtn-reset" onclick="resetTimer()">↺ Reset</button>
-      </div>
-      <div class="timer-step" id="timerStep">🌸 Versez l'eau à 80°C et appuyez sur Démarrer</div>
-    </div>
-
-    <!-- Alarmes -->
-    <!-- SECTION MÉDICAMENTS -->
-    <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--text);margin-bottom:0.5rem">💊 Mes médicaments</div>
-    <div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.6rem;font-style:italic;padding:0.4rem 0.7rem;background:rgba(58,40,32,0.04);border-radius:8px;line-height:1.5">
-      ℹ️ Dosages prescrits par votre médecin. Ne jamais modifier sans avis médical.
-    </div>
-    <div class="alarm-section">
-      <!-- MATIN -->
-      <div style="font-size:0.58rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;color:var(--muted);padding:0.3rem 0 0.3rem;margin-bottom:0.2rem">🌅 Matin — avec le petit-déjeuner</div>
-      <div class="alarm-card" style="border-left:3px solid var(--leaf-mid)">
-        <div class="alarm-icon">💊</div>
-        <div class="alarm-info">
-          <div class="alarm-name">Tramadol LP <span style="color:var(--leaf-dark);font-size:0.9em">50 mg</span></div>
-          <div class="alarm-time">Matin · avec le petit-déjeuner · <strong style="color:var(--leaf-dark)">1 comprimé</strong></div>
-        </div>
-        <button class="alarm-toggle on" id="alarm-tramadol-m" onclick="toggleAlarm('tramadol-m',this)"></button>
-      </div>
-      <div class="alarm-card" style="border-left:3px solid var(--leaf-mid)">
-        <div class="alarm-icon">💊</div>
-        <div class="alarm-info">
-          <div class="alarm-name">Lyrica <span style="color:var(--leaf-dark);font-size:0.9em">325 mg</span></div>
-          <div class="alarm-time">Matin · avec le petit-déjeuner · <strong style="color:var(--leaf-dark)">1 comprimé</strong></div>
-        </div>
-        <button class="alarm-toggle on" id="alarm-lyrica-m" onclick="toggleAlarm('lyrica-m',this)"></button>
-      </div>
-
-      <!-- SOIR -->
-      <div style="font-size:0.58rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;color:var(--muted);padding:0.6rem 0 0.3rem;margin-bottom:0.2rem">🌙 Soir — avant le dîner</div>
-      <div class="alarm-card" style="border-left:3px solid var(--lavender,#9b8ec4)">
-        <div class="alarm-icon">💊</div>
-        <div class="alarm-info">
-          <div class="alarm-name">Tramadol LP <span style="color:#6b5fa0;font-size:0.9em">100 mg</span></div>
-          <div class="alarm-time">Soir · avant le dîner · <strong style="color:#6b5fa0">1 comprimé</strong></div>
-        </div>
-        <button class="alarm-toggle on" id="alarm-tramadol-s" onclick="toggleAlarm('tramadol-s',this)"></button>
-      </div>
-      <div class="alarm-card" style="border-left:3px solid var(--lavender,#9b8ec4)">
-        <div class="alarm-icon">💊</div>
-        <div class="alarm-info">
-          <div class="alarm-name">Lyrica <span style="color:#6b5fa0;font-size:0.9em">375 mg</span></div>
-          <div class="alarm-time">Soir · avant le dîner · <strong style="color:#6b5fa0">1 comprimé</strong></div>
-        </div>
-        <button class="alarm-toggle on" id="alarm-lyrica-s" onclick="toggleAlarm('lyrica-s',this)"></button>
-      </div>
-    </div>
-
-    <!-- COMPLÉMENTS À PRÉVOIR -->
-    <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--text);margin:0.8rem 0 0.4rem">🌿 Compléments alimentaires <span style="font-family:'Nunito',sans-serif;font-size:0.6rem;background:rgba(212,168,67,0.15);color:#8a6800;padding:0.15rem 0.45rem;border-radius:2rem;font-weight:700;vertical-align:middle">À PRÉVOIR</span></div>
-    <div style="font-size:0.67rem;color:var(--muted);margin-bottom:0.6rem;line-height:1.6;padding:0.5rem 0.75rem;background:rgba(212,168,67,0.06);border-radius:10px;border-left:2px solid var(--pistil)">
-      💡 À discuter avec votre médecin. Activez quand vous commencez. Les horaires sont optimisés pour ne pas interférer avec le Tramadol et la Lyrica.
-    </div>
-    <div class="alarm-section">
-      <div class="alarm-card" style="opacity:0.6;border:1.5px dashed rgba(58,40,32,0.15)">
-        <div class="alarm-icon">🌿</div>
-        <div class="alarm-info">
-          <div class="alarm-name">Magnésium bisglycinate</div>
-          <div class="alarm-time">À prendre le soir au dîner · loin du Tramadol soir · 200-300mg</div>
-        </div>
-        <button class="alarm-toggle off" id="alarm-magnesium" onclick="toggleAlarm('magnesium',this)"></button>
-      </div>
-      <div class="alarm-card" style="opacity:0.6;border:1.5px dashed rgba(58,40,32,0.15)">
-        <div class="alarm-icon">🌱</div>
-        <div class="alarm-info">
-          <div class="alarm-name">Fer (bisglycinate)</div>
-          <div class="alarm-time">À prendre le matin à distance du Tramadol · avec vitamine C</div>
-        </div>
-        <button class="alarm-toggle off" id="alarm-fer" onclick="toggleAlarm('fer',this)"></button>
-      </div>
-      <div style="font-size:0.65rem;color:var(--muted);font-style:italic;padding:0.4rem 0.5rem;line-height:1.6">
-        ⚠️ Le fer ne doit pas être pris en même temps que la Lyrica — respecter 2h d'écart minimum. Valider avec votre médecin ou pharmacien.
-      </div>
-    </div>
-
-    <!-- RAPPELS QUOTIDIENS -->
-    <div style="font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;color:var(--text);margin:0.8rem 0 0.5rem">🔔 Rappels quotidiens</div>
-    <div class="alarm-section">
-      <div class="alarm-card">
-        <div class="alarm-icon">🍊</div>
-        <div class="alarm-info">
-          <div class="alarm-name">Goûter Dopamine</div>
-          <div class="alarm-time">Chaque jour à 16h30 · Avant 17h !</div>
-        </div>
-        <button class="alarm-toggle on" id="alarm-gouter" onclick="toggleAlarm('gouter',this)"></button>
-      </div>
-      <div class="alarm-card">
-        <div class="alarm-icon">🍵</div>
-        <div class="alarm-info">
-          <div class="alarm-name">Préparer l'infusion / Lait d'Or</div>
-          <div class="alarm-time">Chaque soir à 20h00</div>
-        </div>
-        <button class="alarm-toggle on" id="alarm-infusion" onclick="toggleAlarm('infusion',this)"></button>
-      </div>
-      <div class="alarm-card">
-        <div class="alarm-icon">⏱</div>
-        <div class="alarm-info">
-          <div class="alarm-name">Batch Cooking</div>
-          <div class="alarm-time">Samedi matin à 9h00</div>
-        </div>
-        <button class="alarm-toggle on" id="alarm-batch" onclick="toggleAlarm('batch',this)"></button>
-      </div>
-    </div>
-
-    <!-- Journal -->
-    <div class="journal-card" style="margin-top:0.5rem">
-      <h3>📔 Comment s'est passée votre nuit ?</h3>
-      <div class="journal-date-row">
-        <span id="journalDateLabel"></span>
-      </div>
-      <div class="stars-row" id="starsRow">
-        <span class="star" onclick="setStar(1)">⭐</span>
-        <span class="star" onclick="setStar(2)">⭐</span>
-        <span class="star" onclick="setStar(3)">⭐</span>
-        <span class="star" onclick="setStar(4)">⭐</span>
-        <span class="star" onclick="setStar(5)">⭐</span>
-      </div>
-      <div class="journal-labels">
-        <span class="jlabel jl-bad" onclick="selectLabel(this,'Crise sévère')">😰 Crise sévère</span>
-        <span class="jlabel jl-bad" onclick="selectLabel(this,'Agité')">😣 Agité</span>
-        <span class="jlabel jl-ok" onclick="selectLabel(this,'Moyen')">😐 Moyen</span>
-        <span class="jlabel jl-good" onclick="selectLabel(this,'Calme')">😌 Calme</span>
-        <span class="jlabel jl-good" onclick="selectLabel(this,'Très bien')">😊 Très bien</span>
-      </div>
-      <textarea class="journal-note" id="journalNote" placeholder="Notes libres… ce que vous avez mangé, comment vous vous sentez, ce qui a aidé…"></textarea>
-      <button class="journal-save" onclick="saveJournal()">💾 Enregistrer cette nuit</button>
-    </div>
-
-    <!-- Historique -->
-    <div class="journal-card">
-      <h3>📈 Mes dernières nuits</h3>
-      <div class="journal-chart">
-        <div class="chart-title">Qualité du sommeil · 7 derniers jours</div>
-        <div class="chart-bars" id="chartBars"></div>
-      </div>
-      <div class="journal-history" id="journalHistory"></div>
     </div>
   </div>
+
+  <!-- Journal de Nuit -->
+  <div class="sleep-card">
+    <div class="sleep-card-header">
+      <div class="sleep-card-title">🌙 Journal de nuit SJSR</div>
+    </div>
+
+    <!-- Navigation date -->
+    <div class="sleep-date-nav">
+      <button class="sleep-nav-btn" onclick="sleepNavDate(-1)">‹</button>
+      <div>
+        <div class="sleep-date-label" id="sleepDateLabel">Lundi 6 avril 2026</div>
+        <div style="font-size:0.58rem;color:var(--muted);text-align:center" id="sleepSavedIndicator"></div>
+      </div>
+      <button class="sleep-nav-btn" onclick="sleepNavDate(1)">›</button>
+    </div>
+
+    <!-- Heures -->
+    <div class="sleep-section">
+      <div class="sleep-section-label">⏰ Horaires</div>
+      <div class="sleep-time-row">
+        <div class="sleep-time-field">
+          <label>Couché à</label>
+          <input type="time" id="slpBedtime" value="22:30" onchange="autoCalcSleep()">
+        </div>
+        <div class="sleep-time-field">
+          <label>Endormi(e) vers</label>
+          <input type="time" id="slpSleepTime" value="23:15" onchange="autoCalcSleep()">
+        </div>
+        <div class="sleep-time-field">
+          <label>Réveil à</label>
+          <input type="time" id="slpWakeTime" value="07:00" onchange="autoCalcSleep()">
+        </div>
+      </div>
+      <div class="sleep-calc">
+        <div>
+          <div class="sleep-calc-label">⏱ Temps au lit</div>
+        </div>
+        <div class="sleep-calc-value" id="slpTotalBed">8h 30min</div>
+      </div>
+      <div class="sleep-calc">
+        <div>
+          <div class="sleep-calc-label">😴 Sommeil réel</div>
+        </div>
+        <div class="sleep-calc-value" id="slpTotalSleep">7h 45min</div>
+      </div>
+      <div class="sleep-calc">
+        <div>
+          <div class="sleep-calc-label">⏳ Endormissement</div>
+        </div>
+        <div class="sleep-calc-value" id="slpLatency">45min</div>
+      </div>
+    </div>
+
+    <!-- Qualité du sommeil -->
+    <div class="sleep-section">
+      <div class="sleep-section-label">⭐ Qualité du sommeil</div>
+      <div class="sleep-stars" id="sleepQualityStars">
+        <span class="sleep-star" onclick="setSleepQuality(1)">★</span>
+        <span class="sleep-star" onclick="setSleepQuality(2)">★</span>
+        <span class="sleep-star" onclick="setSleepQuality(3)">★</span>
+        <span class="sleep-star" onclick="setSleepQuality(4)">★</span>
+        <span class="sleep-star" onclick="setSleepQuality(5)">★</span>
+      </div>
+      <div class="sleep-quality-labels">
+        <span>Très mauvais</span><span>Moyen</span><span>Excellent</span>
+      </div>
+    </div>
+
+    <!-- Réveil -->
+    <div class="sleep-section">
+      <div class="sleep-section-label">🌅 Comment je me sens au réveil</div>
+      <div class="sleep-feeling-grid" id="sleepFeelingGrid">
+        <div class="sleep-feeling-btn" onclick="setSleepFeeling('exhausted')">
+          <span class="sfb-icon">😫</span><span class="sfb-label">Épuisée</span>
+        </div>
+        <div class="sleep-feeling-btn" onclick="setSleepFeeling('tired')">
+          <span class="sfb-icon">😔</span><span class="sfb-label">Fatiguée</span>
+        </div>
+        <div class="sleep-feeling-btn" onclick="setSleepFeeling('ok')">
+          <span class="sfb-icon">😐</span><span class="sfb-label">Correcte</span>
+        </div>
+        <div class="sleep-feeling-btn" onclick="setSleepFeeling('good')">
+          <span class="sfb-icon">🙂</span><span class="sfb-label">Bien</span>
+        </div>
+        <div class="sleep-feeling-btn" onclick="setSleepFeeling('great')">
+          <span class="sfb-icon">😊</span><span class="sfb-label">Reposée</span>
+        </div>
+        <div class="sleep-feeling-btn" onclick="setSleepFeeling('excellent')">
+          <span class="sfb-icon">🌟</span><span class="sfb-label">Excellente</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Douleurs réveil -->
+    <div class="sleep-section">
+      <div class="sleep-section-label">🦵 Douleurs SJSR au réveil (0-10)</div>
+      <div class="pain-val-display p0" id="painMorningDisplay">0 — Aucune douleur</div>
+      <div class="pain-slider-wrap">
+        <input type="range" class="pain-range" id="painMorning" min="0" max="10" value="0"
+          oninput="updatePainDisplay('painMorning','painMorningDisplay')">
+      </div>
+      <div class="pain-slider-labels">
+        <span>0 · Aucune</span><span>5 · Modérée</span><span>10 · Insupportable</span>
+      </div>
+    </div>
+
+    <!-- Douleurs journée -->
+    <div class="sleep-section">
+      <div class="sleep-section-label">🌞 Douleurs SJSR dans la journée (0-10)</div>
+      <div class="pain-val-display p0" id="painDayDisplay">0 — Aucune douleur</div>
+      <div class="pain-slider-wrap">
+        <input type="range" class="pain-range" id="painDay" min="0" max="10" value="0"
+          oninput="updatePainDisplay('painDay','painDayDisplay')">
+      </div>
+      <div class="pain-slider-labels">
+        <span>0 · Aucune</span><span>5 · Modérée</span><span>10 · Insupportable</span>
+      </div>
+    </div>
+
+    <!-- Notes libres -->
+    <div class="sleep-section">
+      <div class="sleep-section-label">📝 Notes — Symptômes · Déclencheurs · Observations</div>
+      <textarea class="sleep-notes-field" id="sleepNotes"
+        placeholder="Ex: Jambes agitées vers 23h · Levée 2 fois · Dîner tardif hier..."></textarea>
+    </div>
+
+    <button class="sleep-save-btn" onclick="saveSleepEntry()">💾 Enregistrer cette nuit</button>
+  </div>
+
+  <!-- Statistiques hebdomadaires -->
+  <div class="sleep-stats-card">
+    <div class="sleep-stats-title">📊 Statistiques</div>
+
+    <!-- Sélecteur semaine -->
+    <div class="week-selector" id="sleepWeekSelector"></div>
+
+    <!-- Stats chiffrées -->
+    <div class="stats-grid" id="sleepStatsGrid">
+      <div class="stat-box">
+        <div class="stat-box-val" id="statAvgSleep">—</div>
+        <div class="stat-box-label">Sommeil moyen</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box-val" id="statAvgQuality">—</div>
+        <div class="stat-box-label">Qualité moyenne</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box-val" id="statAvgPainM">—</div>
+        <div class="stat-box-label">Douleur réveil moy.</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box-val" id="statAvgPainD">—</div>
+        <div class="stat-box-label">Douleur journée moy.</div>
+      </div>
+    </div>
+
+    <!-- Historique des nuits -->
+    <div id="sleepHistoryList" style="margin-top:0.5rem"></div>
+  </div>
+
+  <!-- Rappels médicaments -->
+  <div class="journal-section">
+    <div class="sect-title">💊 Rappels médicaments</div>
+    <div class="alarm-list">
+      <div class="alarm-row"><span class="alarm-icon">🌅</span><div><div class="alarm-name">Tramadol LP 50mg + Lyrica 325mg</div><div class="alarm-time">Matin — avec le petit-déjeuner</div></div></div>
+      <div class="alarm-row"><span class="alarm-icon">🌙</span><div><div class="alarm-name">Tramadol LP 100mg + Lyrica 375mg</div><div class="alarm-time">Soir — AVANT le dîner (avant 19h30)</div></div></div>
+    </div>
+  </div>
+
 </div>
 
-<!-- URGENCE SJSR VIEW -->
 <div id="view-urgence" style="display:none">
   <div class="urgence-section">
     <div class="urgence-header">
@@ -2223,35 +2362,35 @@ const MENUS = {
 // ── SHOPPING ──
 const SHOP_DATA={
 
-  // ── LA FOURCHE · Bio & Sec · ~95€ stock 5 semaines ──
+  // ── LA FOURCHE · Bio & Sec · ~100€ ──
   fourche:[
     // 🐟 Protéines marines
-    {n:"🐟 Sardines huile olive bio × 12",p:"38,28€",u:"Déjeuners lun/jeu/sam × 5 semaines"},
-    {n:"🐟 Maquereau huile olive bio × 8",p:"26,80€",u:"Déjeuners alternés × 5 semaines"},
-    {n:"🐟 Thon albacore au naturel × 4",p:"13,40€",u:"Déjeuners alternés × 5 semaines"},
+    {n:"🐟 Sardines huile olive bio × 12",p:"38,28€",u:"Déjeuners × 5 semaines"},
+    {n:"🐟 Maquereau huile olive bio × 8",p:"26,80€",u:"Déjeuners alternés × 5 sem"},
+    {n:"🐟 Thon albacore au naturel × 4",p:"13,40€",u:"Salade thon-avocat + déjeuners"},
     // 🫘 Légumineuses
     {n:"🫘 Lentilles corail bio 1kg",p:"3,40€",u:"Batch hebdo + veloutés dîner"},
-    {n:"🫘 Lentilles vertes bio 500g",p:"2,20€",u:"Batch sem. 2 & 3"},
+    {n:"🫘 Lentilles vertes bio 500g",p:"2,20€",u:"Déjeuners sem. 2 & 3"},
     {n:"🫘 Pois chiches au naturel bio × 3",p:"8,97€",u:"Déjeuners bureau × 5 sem"},
     {n:"🫘 Haricots rouges bio 425g × 2",p:"7,38€",u:"Déjeuners sem. 3 & 5"},
     {n:"🫘 Pois cassés bio 500g",p:"1,90€",u:"Soupes dîner sem. 3 & 4"},
     {n:"🧈 Tofu noisette ail des ours × 2",p:"5,98€",u:"Dîners lundi sem. 2 & 4"},
     // 🌾 Céréales
     {n:"🌾 Sarrasin décortiqué bio 1kg",p:"3,90€",u:"Batch hebdo — petit-déj quotidien"},
-    {n:"🌾 Flocons de sarrasin bio 500g",p:"2,80€",u:"Porridges matin sem. 1-3"},
+    {n:"🌾 Flocons de sarrasin bio 500g",p:"2,80€",u:"Porridges matin"},
     {n:"🌾 Quinoa duo bio 500g × 2",p:"7,98€",u:"Batch hebdo + brunchs"},
     {n:"🌾 Polenta de maïs bio 500g",p:"2,50€",u:"Dîner agneau-polenta sem. 4"},
     {n:"🌾 Farine de riz bio 500g",p:"2,10€",u:"Moelleux pêches-noisettes dim. 26 avr"},
     // 🌱 Graines
     {n:"🌱 Graines de chia bio 500g",p:"3,65€",u:"Chia pudding petit-déj × 5 sem"},
     {n:"🌱 Graines de courge bio 250g × 2",p:"7,02€",u:"Batch torréfaction + snacks + veloutés"},
-    {n:"🌱 Graines de lin bio 250g",p:"2,20€",u:"Brunchs + déjeuners (oméga-3)"},
+    {n:"🌱 Graines de lin bio 250g",p:"2,20€",u:"Brunchs + déjeuners oméga-3"},
     // 🥜 Oléagineux
-    {n:"🥜 Amandes décortiquées bio 500g × 2",p:"15,00€",u:"Batch torréfaction + goûters + energy balls"},
+    {n:"🥜 Amandes décortiquées bio 500g × 2",p:"15,00€",u:"Batch + goûters + energy balls — usage quotidien"},
     {n:"🥜 Noisettes décortiquées bio 200g",p:"4,50€",u:"Porridges + moelleux pêches"},
     {n:"🥜 Pistaches bio non salées 150g",p:"5,99€",u:"Goûters + dîner agneau-polenta"},
-    {n:"🥜 Noix de Grenoble bio 200g",p:"4,80€",u:"Déjeuners sem. 4 & 5 (oméga-3)"},
-    {n:"🌴 Dattes Medjool bio 500g",p:"7,99€",u:"Energy balls + goûters + brunch anniversaire"},
+    {n:"🥜 Noix de Grenoble bio 200g",p:"4,80€",u:"Déjeuners sem. 4 & 5 — oméga-3"},
+    {n:"🌴 Dattes Medjool bio 500g",p:"7,99€",u:"Energy balls + goûters + brunchs"},
     {n:"🥜 Purée d'amande bio 250g",p:"5,50€",u:"Chia pudding sem. 1 & 2"},
     {n:"🌿 Coco râpée bio 200g",p:"2,40€",u:"Energy balls"},
     {n:"🍫 Cacao brut en poudre bio 200g",p:"4,50€",u:"Energy balls × 5 sem + mousse choc"},
@@ -2261,12 +2400,13 @@ const SHOP_DATA={
     {n:"🍫 Chocolat noir 92% Fairafric × 2",p:"6,90€",u:"Goûters sem. 2 & 3"},
     // 🫒 Huiles & Condiments
     {n:"🫒 Huile d'olive vierge extra bio 1L",p:"9,75€",u:"Cuisson quotidienne"},
-    {n:"🌿 Huile de colza vierge bio 1L",p:"4,09€",u:"Déjeuners bureau (oméga-3 cru)"},
+    {n:"🌿 Huile de colza vierge bio 1L",p:"4,09€",u:"Déjeuners bureau — oméga-3 cru"},
     {n:"🌿 Huile de lin bio 250ml",p:"4,50€",u:"Salades sardines/maquereau"},
-    {n:"🍎 Vinaigre de cidre bio 1L",p:"2,98€",u:"Légumineuses bureau (fer ×3)"},
+    {n:"🍎 Vinaigre de cidre bio 1L",p:"2,98€",u:"Légumineuses bureau — absorption fer ×3"},
     {n:"🥛 Lait de millet bio 6×200ml",p:"8,00€",u:"Petit-déj + veloutés + Lait d'Or"},
     {n:"🥥 Lait de coco Masala bio × 3",p:"4,47€",u:"Veloutés dîner × 5 sem"},
-    {n:"🌿 Tahini crème sésame bio 250g",p:"4,20€",u:"Caviar aubergines sam. 11&25 avr, 9 mai"},
+    {n:"🌿 Tahini crème sésame bio 250g",p:"4,20€",u:"Caviar aubergines brunchs sam."},
+    {n:"🍯 Miel bio liquide 250g",p:"3,50€",u:"Fruits rôtis snacks TV + brunch moelleux"},
     // 🧂 Sel Santé maison
     {n:"🧂 Sel de mer fin bio 500g",p:"1,80€",u:"Sel Santé batch hebdo"},
     {n:"🌿 Curcuma bio en poudre 50g",p:"2,50€",u:"Sel Santé + carottes + tofu"},
@@ -2275,62 +2415,71 @@ const SHOP_DATA={
     {n:"🌿 Cannelle bio en poudre 30g",p:"2,10€",u:"Porridges + veloutés courge"},
     {n:"🌿 Cardamome bio en poudre 20g",p:"2,80€",u:"Anniversaire + Lait d'Or"},
     {n:"🌿 Piment doux bio 20g",p:"1,80€",u:"Mousse chocolat anniversaire"},
-    {n:"🌿 Vanille en poudre bio 10g",p:"3,50€",u:"Compotées snack TV"},
+    {n:"🌿 Vanille en poudre bio 10g",p:"3,50€",u:"Compotées pommes snack TV"},
     {n:"🌿 Sésame bio 200g",p:"2,90€",u:"Brunchs caviar aubergines"},
   ],
 
-  // ── PICARD · Surgelés · ~130€ stock 5 semaines ──
+  // ── PICARD · Surgelés · ~135€ ──
   picard:[
-    // 🍓 Fruits pour Ninja Creami + petit-déj
+    // 🍓 Fruits Ninja Creami + petit-déj
     {n:"🍓 Cocktail fruits rouges bio 450g × 2",p:"13,98€",u:"Bases Ninja Creami + brunchs"},
     {n:"🍓 Framboises entières bio 450g × 2",p:"19,98€",u:"Bases Ninja Creami + porridges"},
     {n:"🥭 Mangues en morceaux bio 450g × 2",p:"10,60€",u:"Bases Ninja Creami + porridges"},
     {n:"🍊 Salade fruits bio 600g",p:"7,49€",u:"Petit-déj sem. 1 & 5"},
     {n:"🍒 Cerises bio 450g",p:"8,50€",u:"Mousse choc anniversaire + goûters"},
     // 🥬 Légumes
-    {n:"🥬 Épinards en branches bio 600g × 3",p:"8,70€",u:"Batch sautés ail × 5 sem"},
-    {n:"🫘 Haricots verts extra-fins 1kg",p:"2,69€",u:"Dîner cabillaud anniversaire"},
-    {n:"🥦 Brocolis 1kg",p:"3,60€",u:"Dîner tofu-brocolis sem. 4"},
+    {n:"🥬 Épinards en branches bio 600g × 3",p:"8,70€",u:"Batch sautés ail hebdo"},
+    {n:"🫘 Haricots verts extra-fins 1kg",p:"2,69€",u:"Dîner cabillaud anniversaire 14 avr"},
+    {n:"🥦 Brocolis 1kg",p:"3,60€",u:"Dîner saumon-patate douce + tofu"},
     {n:"🥕 Carottes en rondelles 600g",p:"2,20€",u:"Batch carottes curcuma sem. 2"},
-    {n:"🥬 Poireaux émincés 600g",p:"2,50€",u:"Papillotes sem. 2 & 5"},
+    {n:"🥬 Poireaux émincés 600g",p:"2,50€",u:"Papillotes dîners sem. 2 & 5"},
     // 🐟 Poissons
-    {n:"🐟 6 portions cabillaud MSC 600g × 2",p:"35,98€",u:"Dîners papillotes × 5 sem"},
+    {n:"🐟 6 portions cabillaud MSC 600g × 2",p:"35,98€",u:"Dîners papillotes + anniversaire"},
     {n:"🐟 Filets colin lieu MSC 500g × 2",p:"17,98€",u:"Dîners papillotes alternance"},
-    {n:"🐟 Saumon mi-cuit portions 300g",p:"9,50€",u:"Brunchs sam. 25 avr + 2 & 9 mai"},
+    {n:"🐟 Saumon mi-cuit portions 300g",p:"9,50€",u:"Brunchs sam. + dîners saumon-patate douce"},
     {n:"🦐 Crevettes décortiquées ASC 200g",p:"8,50€",u:"Dîners sem. 3 & 5"},
+    // 🍗 Viandes blanches (Picard)
+    {n:"🍗 Filets de poulet bio 4×120g",p:"9,50€",u:"Déjeuners bowl quinoa-poulet × 4 sem"},
+    {n:"🦃 Escalopes de dinde × 4",p:"7,90€",u:"Dîners dinde-légumes rôtis sem. 3 & 5"},
+    {n:"🥩 Agneau confit portions 200g",p:"8,50€",u:"Dîner agneau-polenta sem. 4"},
     // 🌿 Aromates
     {n:"🫚 Gingembre coupé 75g × 2",p:"4,00€",u:"Infusions quotidiennes + dîners"},
     {n:"🧄 Ail coupé 100g",p:"2,99€",u:"Épinards batch + dîners"},
     {n:"🧅 Échalote coupée 100g",p:"2,85€",u:"Dîner colin sem. 4"},
-    {n:"🌿 Persillade ail-persil 50g",p:"1,79€",u:"Déjeuner haricots rouges sem. 3"},
-    {n:"🌿 Persil plat coupé 250g",p:"2,25€",u:"Déjeuners bureau quotidiens"},
+    {n:"🌿 Persil plat coupé 250g",p:"2,25€",u:"Déjeuners bureau quotidiens — dopamine"},
     {n:"🌿 Basilic coupé bio 50g × 2",p:"4,80€",u:"Déjeuners + dîners + brunchs"},
     {n:"🌿 Thym coupé 50g",p:"2,00€",u:"Papillotes + fruits rôtis"},
     {n:"🌿 Sauge coupée 30g",p:"2,00€",u:"Poulet-patate douce + agneau"},
     {n:"🌿 Romarin coupé 30g",p:"2,00€",u:"Figues rôties snack TV"},
   ],
 
-  // ── BENE BONO / MARCHÉ · Frais · ~20-28€ / semaine ──
+  // ── BENE BONO / MARCHÉ · Frais · ~25-30€/semaine ──
   beno:[
     // Essentiels chaque semaine
-    {n:"🍋 Citrons bio × 6 — SYSTÉMATIQUES",p:"~2€",u:"Sur tout : lentilles, poisson, salades"},
-    {n:"🥚 Œufs bio × 6",p:"~2,50€",u:"Brunchs week-end + mousse chocolat"},
-    // Légumes par usage
-    {n:"🍆 Aubergines × 2",p:"marché",u:"Caviar aubergines-tahini (sam. 11, 25 avr, 9 mai)"},
-    {n:"🍅 Tomates fraîches × 4",p:"marché",u:"Brunch salade pois chiches-basilic"},
-    {n:"🫑 Poivrons rouges × 3",p:"marché",u:"Déjeuners bureau sem. 1, 3 & 5 (vit C + fer)"},
-    {n:"🥕 Carottes fraîches × 4",p:"marché",u:"Déjeuner poulet sem. 3 + batch"},
-    {n:"🍠 Patates douces × 3",p:"marché",u:"Déjeuner poulet (sem.3) + dîner (sem.5)"},
+    {n:"🍋 Citrons bio × 6 — SYSTÉMATIQUES",p:"~2€",u:"Sur tout : lentilles, poisson, salades, dîners"},
+    {n:"🥚 Œufs bio × 6",p:"~2,50€",u:"Brunchs week-end + mousse chocolat anniversaire"},
+    {n:"🍯 Miel bio (si pas La Fourche)",p:"~3€",u:"Fruits rôtis snack TV — abricots, poires, figues"},
+    // Légumes frais par usage
+    {n:"🥑 Avocats × 3",p:"marché",u:"Bowl quinoa-poulet-avocat (lun. sem. 1,2,4,5) + salade thon"},
+    {n:"🍆 Aubergines × 2",p:"marché",u:"Caviar aubergines-tahini brunchs sam. 11, 25 avr, 9 mai"},
+    {n:"🍅 Tomates fraîches × 4",p:"marché",u:"Brunch salade pois chiches-basilic dim."},
+    {n:"🫑 Poivrons rouges × 3",p:"marché",u:"Déjeuners bureau sem. 1, 3 & 5 — vit C + fer"},
+    {n:"🥕 Carottes fraîches × 4",p:"marché",u:"Batch carottes curcuma + déjeuner poulet"},
+    {n:"🍠 Patates douces × 4",p:"marché",u:"Dîners saumon-patate douce (sem.2,4) + poulet"},
+    {n:"🥒 Courgettes × 4",p:"marché",u:"Dîners papillotes + brandade (sem. 1,2,3,4)"},
     {n:"🌿 Fenouil × 2",p:"marché",u:"Papillotes dîner sem. 2 & 4"},
-    {n:"🎃 Courge butternut × 2",p:"marché",u:"Veloutés dîner dim. sem. 3 & 4"},
+    {n:"🎃 Courge butternut ou potimarron × 3",p:"marché",u:"Veloutés dîner dim. sem. 2, 3 & 4"},
     {n:"🌰 Châtaignes cuites × 2",p:"marché",u:"Veloutés potimarron-châtaignes"},
+    {n:"🥗 Betteraves cuites × 3",p:"marché",u:"Déjeuners sardines-betteraves (sem.2,3,5)"},
+    {n:"🧅 Panais × 2",p:"marché",u:"Velouté panais-poires dîner sem. 3 & 5"},
     // Fruits frais par usage
     {n:"🍐 Poires × 4",p:"marché",u:"Fruits rôtis snack TV + velouté panais"},
-    {n:"🍑 Pêches ou abricots × 6",p:"marché",u:"Fruits rôtis + moelleux pêches (dim. 26 avr)"},
+    {n:"🍑 Pêches ou abricots × 6",p:"marché",u:"Fruits rôtis + moelleux pêches dim. 26 avr"},
     {n:"🥝 Kiwis × 3",p:"marché",u:"Petit-déj vit C++ sem. 2"},
     {n:"🍎 Pommes × 4",p:"marché",u:"Compotées snack TV sem. 4 & 5"},
+    {n:"🍑 Figues fraîches × 6",p:"marché",u:"Snack TV figues rôties romarin sem. 2,3,4"},
     // Herbes fraîches
-    {n:"🌿 Persil plat frais",p:"marché",u:"TOUS les déjeuners bureau (dopamine + fer)"},
+    {n:"🌿 Persil plat frais",p:"marché",u:"TOUS les déjeuners bureau — dopamine + fer"},
     {n:"🌿 Basilic frais",p:"marché",u:"Brunchs dominicaux + dîners basilic"},
     {n:"🌿 Sauge fraîche",p:"marché",u:"Poulet-patate douce sem. 3"},
     {n:"🌿 Thym frais",p:"marché",u:"Fruits rôtis abricots + poires"},
@@ -2894,6 +3043,279 @@ function toggleBatchStep(weekIdx, secIdx, stepIdx, checkbox){
   if(ptxt) ptxt.textContent = completed + ' / ' + total + ' étapes complétées · ' + pct + '%';
 }
 
+
+// ══════════════════════════════════════
+// JOURNAL DE NUIT SJSR
+// ══════════════════════════════════════
+
+const PAIN_LABELS = {
+  0:"Aucune douleur", 1:"Très légère", 2:"Légère",
+  3:"Légère-modérée", 4:"Modérée", 5:"Modérée",
+  6:"Modérée-intense", 7:"Intense", 8:"Très intense",
+  9:"Sévère", 10:"Insupportable"
+};
+
+const FEELING_ICONS = {
+  exhausted:"😫", tired:"😔", ok:"😐",
+  good:"🙂", great:"😊", excellent:"🌟"
+};
+
+let sleepCurrentDate = new Date();
+let sleepQuality = 0;
+let sleepFeeling = "";
+let sleepData = {};
+
+// Load from localStorage
+try {
+  const saved = localStorage.getItem("sjsr_sleep");
+  if(saved) sleepData = JSON.parse(saved);
+} catch(e) {}
+
+function sleepDateKey(d) {
+  const dd = d || sleepCurrentDate;
+  return dd.getFullYear() + "-" + String(dd.getMonth()+1).padStart(2,"0") + "-" + String(dd.getDate()).padStart(2,"0");
+}
+
+function sleepDateLabel(d) {
+  const dd = d || sleepCurrentDate;
+  const days = ["Dimanche","Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi"];
+  const months = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+  return days[dd.getDay()] + " " + dd.getDate() + " " + months[dd.getMonth()] + " " + dd.getFullYear();
+}
+
+function sleepNavDate(delta) {
+  sleepCurrentDate = new Date(sleepCurrentDate.getTime() + delta * 86400000);
+  loadSleepEntry();
+  updateSleepStats();
+}
+
+function loadSleepEntry() {
+  const key = sleepDateKey();
+  const el = document.getElementById("sleepDateLabel");
+  if(el) el.textContent = sleepDateLabel();
+
+  const entry = sleepData[key] || {};
+  
+  // Set times
+  if(document.getElementById("slpBedtime")) {
+    document.getElementById("slpBedtime").value = entry.bedtime || "22:30";
+    document.getElementById("slpSleepTime").value = entry.sleepTime || "23:15";
+    document.getElementById("slpWakeTime").value = entry.wakeTime || "07:00";
+    autoCalcSleep();
+  }
+
+  // Stars
+  sleepQuality = entry.quality || 0;
+  updateStars();
+
+  // Feeling
+  sleepFeeling = entry.feeling || "";
+  updateFeelingBtns();
+
+  // Pain sliders
+  if(document.getElementById("painMorning")) {
+    document.getElementById("painMorning").value = entry.painMorning || 0;
+    document.getElementById("painDay").value = entry.painDay || 0;
+    updatePainDisplay("painMorning","painMorningDisplay");
+    updatePainDisplay("painDay","painDayDisplay");
+  }
+
+  // Notes
+  if(document.getElementById("sleepNotes"))
+    document.getElementById("sleepNotes").value = entry.notes || "";
+
+  // Saved indicator
+  const ind = document.getElementById("sleepSavedIndicator");
+  if(ind) ind.textContent = entry.savedAt ? "✓ Enregistrée le " + entry.savedAt : "";
+}
+
+function autoCalcSleep() {
+  const bed = document.getElementById("slpBedtime")?.value;
+  const sleep = document.getElementById("slpSleepTime")?.value;
+  const wake = document.getElementById("slpWakeTime")?.value;
+  if(!bed || !sleep || !wake) return;
+
+  function toMin(t) {
+    const [h,m] = t.split(":").map(Number);
+    return h * 60 + m;
+  }
+  function formatDuration(min) {
+    if(min < 0) min += 1440;
+    const h = Math.floor(min/60);
+    const m = min % 60;
+    return h + "h " + String(m).padStart(2,"0") + "min";
+  }
+
+  const bedMin = toMin(bed);
+  const sleepMin = toMin(sleep);
+  const wakeMin = toMin(wake);
+
+  let totalBed = wakeMin - bedMin;
+  if(totalBed < 0) totalBed += 1440;
+
+  let totalSleep = wakeMin - sleepMin;
+  if(totalSleep < 0) totalSleep += 1440;
+
+  let latency = sleepMin - bedMin;
+  if(latency < 0) latency += 1440;
+
+  const bedEl = document.getElementById("slpTotalBed");
+  const sleepEl = document.getElementById("slpTotalSleep");
+  const latEl = document.getElementById("slpLatency");
+
+  if(bedEl) bedEl.textContent = formatDuration(totalBed);
+  if(sleepEl) {
+    sleepEl.textContent = formatDuration(totalSleep);
+    sleepEl.className = "sleep-calc-value " + (totalSleep >= 420 ? "good" : totalSleep >= 300 ? "warning" : "bad");
+  }
+  if(latEl) {
+    latEl.textContent = formatDuration(latency);
+    latEl.className = "sleep-calc-value " + (latency <= 30 ? "good" : latency <= 60 ? "warning" : "bad");
+  }
+}
+
+function setSleepQuality(n) {
+  sleepQuality = n;
+  updateStars();
+}
+
+function updateStars() {
+  document.querySelectorAll(".sleep-star").forEach((s,i) => {
+    s.classList.toggle("active", i < sleepQuality);
+  });
+}
+
+function setSleepFeeling(f) {
+  sleepFeeling = f;
+  updateFeelingBtns();
+}
+
+function updateFeelingBtns() {
+  document.querySelectorAll(".sleep-feeling-btn").forEach(btn => {
+    const f = btn.getAttribute("onclick").match(/'([^']+)'/)?.[1];
+    btn.classList.toggle("selected", f === sleepFeeling);
+  });
+}
+
+function updatePainDisplay(sliderId, displayId) {
+  const val = parseInt(document.getElementById(sliderId)?.value || 0);
+  const el = document.getElementById(displayId);
+  if(!el) return;
+  el.textContent = val + " — " + (PAIN_LABELS[val] || "");
+  el.className = "pain-val-display p" + val;
+}
+
+function saveSleepEntry() {
+  const key = sleepDateKey();
+  const now = new Date();
+  const timeStr = String(now.getHours()).padStart(2,"0") + "h" + String(now.getMinutes()).padStart(2,"0");
+
+  sleepData[key] = {
+    bedtime: document.getElementById("slpBedtime")?.value,
+    sleepTime: document.getElementById("slpSleepTime")?.value,
+    wakeTime: document.getElementById("slpWakeTime")?.value,
+    quality: sleepQuality,
+    feeling: sleepFeeling,
+    painMorning: parseInt(document.getElementById("painMorning")?.value || 0),
+    painDay: parseInt(document.getElementById("painDay")?.value || 0),
+    notes: document.getElementById("sleepNotes")?.value || "",
+    savedAt: timeStr
+  };
+
+  try { localStorage.setItem("sjsr_sleep", JSON.stringify(sleepData)); } catch(e){}
+
+  const ind = document.getElementById("sleepSavedIndicator");
+  if(ind) ind.textContent = "✓ Enregistrée à " + timeStr;
+
+  // Flash save button
+  const btn = document.querySelector(".sleep-save-btn");
+  if(btn) {
+    btn.textContent = "✅ Nuit enregistrée !";
+    btn.style.background = "linear-gradient(135deg,#4a8a5a,#2a6a3a)";
+    setTimeout(() => {
+      btn.textContent = "💾 Enregistrer cette nuit";
+      btn.style.background = "";
+    }, 2000);
+  }
+
+  updateSleepStats();
+}
+
+function calcSleepHours(entry) {
+  if(!entry || !entry.sleepTime || !entry.wakeTime) return null;
+  function toMin(t){ const [h,m]=t.split(":").map(Number); return h*60+m; }
+  let d = toMin(entry.wakeTime) - toMin(entry.sleepTime);
+  if(d < 0) d += 1440;
+  return Math.round(d/6)/10; // one decimal hour
+}
+
+function updateSleepStats() {
+  // Build week selector (last 4 weeks)
+  const selEl = document.getElementById("sleepWeekSelector");
+  if(!selEl) return;
+
+  // Get all entries sorted
+  const allKeys = Object.keys(sleepData).sort().reverse();
+  if(allKeys.length === 0) {
+    selEl.innerHTML = '<div style="font-size:0.7rem;color:var(--muted);padding:0.5rem">Aucune nuit enregistrée.</div>';
+    document.getElementById("sleepHistoryList").innerHTML = "";
+    return;
+  }
+
+  // Show last 7 entries history
+  const histEl = document.getElementById("sleepHistoryList");
+  let histHTML = "";
+  const recent = allKeys.slice(0, 14);
+
+  // Compute stats on all entries
+  let totalHours = 0, countH = 0;
+  let totalQ = 0, countQ = 0;
+  let totalPM = 0, totalPD = 0, countP = 0;
+
+  recent.forEach(key => {
+    const e = sleepData[key];
+    const h = calcSleepHours(e);
+    const d = new Date(key + "T12:00:00");
+    const dayNames = ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
+    const dayLabel = dayNames[d.getDay()] + " " + d.getDate() + "/" + (d.getMonth()+1);
+
+    if(h !== null){ totalHours += h; countH++; }
+    if(e.quality){ totalQ += e.quality; countQ++; }
+    if(e.painMorning !== undefined){ totalPM += e.painMorning; totalPD += (e.painDay||0); countP++; }
+
+    const qualStars = e.quality ? "★".repeat(e.quality) + "☆".repeat(5-e.quality) : "—";
+    const feelIcon = FEELING_ICONS[e.feeling] || "—";
+    const hoursStr = h !== null ? h + "h" : "—";
+    const pmStr = e.painMorning !== undefined ? e.painMorning + "/10" : "—";
+    const barPct = h ? Math.min(100, (h/9)*100) : 0;
+    const barColor = h >= 7 ? "#6b9e78" : h >= 5 ? "#c8a050" : "#c04040";
+
+    histHTML += `<div class="sleep-history-row">
+      <div class="shr-date">${dayLabel}</div>
+      <div class="shr-hours" style="color:${h>=7?"#4a8a4a":h>=5?"#c47a2a":"#c04040"}">${hoursStr}</div>
+      <div class="shr-bar"><div class="shr-bar-fill" style="width:${barPct}%;background:${barColor}"></div></div>
+      <div class="shr-stars" style="font-size:0.62rem;color:#d4a843">${qualStars}</div>
+      <div class="shr-pain" style="font-size:0.62rem;color:${e.painMorning>=7?"#c04040":e.painMorning>=4?"#c47a2a":"#4a8a4a"}">${pmStr}</div>
+      <div class="shr-feeling">${feelIcon}</div>
+    </div>`;
+  });
+
+  histEl.innerHTML = histHTML;
+
+  // Update stat boxes
+  const avgH = countH ? (totalHours/countH).toFixed(1) + "h" : "—";
+  const avgQ = countQ ? (totalQ/countQ).toFixed(1) + "★" : "—";
+  const avgPM = countP ? (totalPM/countP).toFixed(1) + "/10" : "—";
+  const avgPD = countP ? (totalPD/countP).toFixed(1) + "/10" : "—";
+
+  if(document.getElementById("statAvgSleep")) {
+    document.getElementById("statAvgSleep").textContent = avgH;
+    document.getElementById("statAvgQuality").textContent = avgQ;
+    document.getElementById("statAvgPainM").textContent = avgPM;
+    document.getElementById("statAvgPainD").textContent = avgPD;
+  }
+}
+
 buildCalendar();
 buildShopping();
 // Load saved batch progress
@@ -3087,6 +3509,7 @@ function showView(v){
   });
   if(v==='diner') buildDiners();
   if(v==='batch'){ renderBatchWeek(currentBatchWeek); }
+  if(v==='journal'){ loadSleepEntry(); updateSleepStats(); autoCalcSleep(); }
   if(v==='journal'){setDateLabel();loadJournalHistory();updateTimerDisplay();}
 }
 
