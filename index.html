@@ -2,8 +2,15 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mon Compte">
+<meta name="theme-color" content="#1a1a2e">
 <title>Mon Compte · Ketty</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{--ink:#1a1a2e;--paper:#f5f0e8;--cream:#ede8dc;--accent:#c8553d;--accent2:#4a7c6f;--gold:#c9a84c;--muted:#8a8070;--border:#d4cfc4;--card:#fffcf7;--green:#2d6a4f;--red:#c8553d;}
@@ -1824,6 +1831,13 @@ function renderAccueil() {
   el.innerHTML = html;
 }
 
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function(e){});
+  });
+}
 </script>
 </body>
 </html>
