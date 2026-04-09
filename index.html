@@ -606,7 +606,15 @@ function saveLS() {
   } catch(e) {}
 }
 function getLS(k, def) { try { var s=localStorage.getItem(k); return s?JSON.parse(s):def; } catch(e){return def;} }
-function showSave() { var el=document.getElementById('saveIndicator'); el.classList.add('show'); setTimeout(function(){el.classList.remove('show');},1800); }
+function showSave() { var el=document.getElementById('saveIndicator'); el.classList.add('show'); setTimeout(function(){
+  // Force reset si ancienne version détectée
+  var appVersion = '2026-04-09-v3';
+  if (localStorage.getItem('ketty_version') !== appVersion) {
+    localStorage.removeItem('ketty_ops');
+    localStorage.removeItem('ketty_budgets');
+    localStorage.removeItem('ketty_enveloppes');
+    localStorage.setItem('ketty_version', appVersion);
+  }el.classList.remove('show');},1800); }
 
 // ── INIT ──────────────────────────────────────
 function initOps() {
