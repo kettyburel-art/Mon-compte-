@@ -268,11 +268,11 @@ input:focus,select:focus{border-color:var(--accent);}
       <div style="display:flex;gap:14px;align-items:flex-end;justify-content:flex-end">
         <div>
           <div class="solde-label">💳 Nickel</div>
-          <div class="solde-amount positive" id="headerSolde" style="font-size:1.1rem">31,21 &euro;</div>
+          <div class="solde-amount positive" id="headerSolde" style="font-size:1.1rem">1,11 &euro;</div>
         </div>
         <div onclick="editRevolut()" style="cursor:pointer" title="Appuyer pour modifier">
           <div class="solde-label">💛 Revolut ✏️</div>
-          <div class="solde-amount positive" id="headerRevolut" style="font-size:1.1rem">33,96 &euro;</div>
+          <div class="solde-amount positive" id="headerRevolut" style="font-size:1.1rem">3,96 &euro;</div>
         </div>
       </div>
       <div style="font-size:0.65rem;color:#9090a0;margin-top:3px;text-align:right">Total : <span id="headerTotal">54,77 &euro;</span></div>
@@ -678,7 +678,7 @@ function setSens(s) {
 }
 function updateSolde() {
   var uf=ops.filter(function(o){return o.source==='user';}).reduce(function(s,o){return s+o.montant;},0);
-  var d=31.21+uf;
+  var d=1.11+uf;
   var el=document.getElementById('headerSolde');
   el.textContent=d.toFixed(2).replace('.',',')+' €';
   el.className='solde-amount '+(d>=0?'positive':'negative');
@@ -1390,7 +1390,11 @@ function buildRaw() {
   {d:'2026-04-07',l:'Miettes 1&Co',m:-10.49,c:'Alimentation',mode:'CB'},
   {d:'2026-04-07',l:'Cdiscount - Support plantes + canisses balcon',m:-127.29,c:'Travaux / Maison',mode:'CB'},
   {d:'2026-04-07',l:'GiFi (Revolut)',m:-16.99,c:'Shopping autres',mode:'CB'},
-  {d:'2026-04-25',l:'FMA Services - Plomberie complète (espèces)',m:-189.75,c:'Travaux / Maison',mode:'Especes'}
+  {d:'2026-04-07',l:'Carrefour City',m:-7.04,c:'Alimentation',mode:'CB'},
+  {d:'2026-04-07',l:'Virement Nickel vers Revolut',m:-20.00,c:'Virements envoyés',mode:'Virement'},
+  {d:'2026-04-07',l:'Retrait DAB',m:-50.00,c:'Retraits',mode:'Especes'},
+  {d:'2026-04-09',l:'Klarna Temu.com',m:-3.06,c:'Courses en ligne',mode:'CB'},
+  {d:'2026-05-25',l:'FMA Services - Plomberie complète (espèces)',m:-189.75,c:'Travaux / Maison',mode:'Especes'}
   ];
 }
 // ── PREVISIONNEL ──────────────────────────────
@@ -1565,7 +1569,7 @@ function loadPlanRecommande() {
 
 // ── SOLDE REVOLUT MODIFIABLE ──────────────────
 function editRevolut() {
-  var cur = parseFloat(localStorage.getItem('ketty_revolut') || '33.96');
+  var cur = parseFloat(localStorage.getItem('ketty_revolut') || '3.96');
   var val = prompt('Solde Revolut actuel (€) :', cur.toFixed(2));
   if (val === null) return;
   var n = parseFloat(val.replace(',','.'));
@@ -1750,7 +1754,7 @@ function renderAccueil() {
 
   // Soldes
   var soldeNickel = parseFloat((document.getElementById('headerSolde').textContent || '0').replace(',','.').replace('€','').trim()) || 15.21;
-  var soldeRevolut = parseFloat(localStorage.getItem('ketty_revolut') || '33.96');
+  var soldeRevolut = parseFloat(localStorage.getItem('ketty_revolut') || '3.96');
   var soldeTotal = soldeNickel + soldeRevolut;
 
   // Alertes
