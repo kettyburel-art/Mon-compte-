@@ -608,7 +608,7 @@ function saveLS() {
 function getLS(k, def) { try { var s=localStorage.getItem(k); return s?JSON.parse(s):def; } catch(e){return def;} }
 function showSave() { var el=document.getElementById('saveIndicator'); el.classList.add('show'); setTimeout(function(){
   // Force reset si ancienne version détectée
-  var appVersion = '2026-04-09-v3';
+  var appVersion = '2026-04-10-v1';
   if (localStorage.getItem('ketty_version') !== appVersion) {
     localStorage.removeItem('ketty_ops');
     localStorage.removeItem('ketty_budgets');
@@ -1849,9 +1849,10 @@ function renderAccueil() {
 
 </script>
 <script>
+// Désactiver le service worker pour éviter les problèmes de cache
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js').catch(function(e){});
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    for(let reg of registrations) { reg.unregister(); }
   });
 }
 </script>
