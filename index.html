@@ -291,6 +291,8 @@ input:focus,select:focus{border-color:var(--accent);}
   <div class="tab" onclick="showPanel('comparaison',this)">&#128200; Comp.</div>
   <div class="tab" onclick="showPanel('budgets',this)">&#127919; Budgets</div>
   <div class="tab" onclick="showPanel('previsionnel',this)">&#128197; Pr&eacute;v.</div>
+  <div class="tab" onclick="showPanel('graphique',this)">&#128200; Graph.</div>
+  <div class="tab" onclick="showPanel('objectif',this)">&#127919; Obj.</div>
   <div class="tab" onclick="showPanel('ajouter',this)">&#10133; Ajout</div>
 </div>
 
@@ -465,13 +467,12 @@ input:focus,select:focus{border-color:var(--accent);}
 <!-- PREVISIONNEL -->
 <div id="panel-previsionnel" class="panel">
   <div class="card-box">
-    <h2>&#128197; Pr&eacute;visionnel 12 mois</h2>
-    <p style="font-size:0.78rem;color:var(--muted);margin-bottom:14px;line-height:1.5">Bas&eacute; sur tes revenus r&eacute;els (sal. + CAF + esp&egrave;ces) et tes d&eacute;penses moyennes des 3 derniers mois.</p>
-    <div id="prevContent"></div>
+    <h2>&#128198; Simulation budg&eacute;taire</h2>
+    <p style="font-size:0.78rem;color:var(--muted);margin-bottom:16px">Bas&eacute;e sur tes donn&eacute;es r&eacute;elles — salaire variable, charges fixes, pockets Revolut.</p>
+    <div id="simContent"></div>
   </div>
 </div>
 
-<!-- GRAPHIQUE -->
 <div id="panel-graphique" class="panel">
   <div class="card-box">
     <h2>&#128200; &Eacute;volution mensuelle</h2>
@@ -597,6 +598,12 @@ var ops = [], budgets = [], enveloppes = [], nextId = 1000, currentSens = 'debit
 // ── DATA ──────────────────────────────────────
 
 // ── STORAGE ───────────────────────────────────
+function loadLS() {
+  try { var u=JSON.parse(localStorage.getItem('ketty_ops')||'[]'); u.forEach(function(o){o.source='user';}); ops=ops.concat(u); } catch(e) {}
+  try { budgets=budgets.concat(JSON.parse(localStorage.getItem('ketty_budgets')||'[]')); } catch(e) {}
+  try { enveloppes=enveloppes.concat(JSON.parse(localStorage.getItem('ketty_enveloppes')||'[]')); } catch(e) {}
+  try { objectifs=JSON.parse(localStorage.getItem('ketty_objectifs')||'[]'); } catch(e) {}
+}
 function saveLS() {
   try {
     localStorage.setItem('ketty_ops', JSON.stringify(ops.filter(function(o){return o.source==='user';})));
@@ -606,15 +613,16 @@ function saveLS() {
   } catch(e) {}
 }
 function getLS(k, def) { try { var s=localStorage.getItem(k); return s?JSON.parse(s):def; } catch(e){return def;} }
-function showSave() { var el=document.getElementById('saveIndicator'); el.classList.add('show'); setTimeout(function(){
-  // Force reset si ancienne version détectée
-  var appVersion = '2026-04-10-v1';
-  if (localStorage.getItem('ketty_version') !== appVersion) {
-    localStorage.removeItem('ketty_ops');
-    localStorage.removeItem('ketty_budgets');
-    localStorage.removeItem('ketty_enveloppes');
-    localStorage.setItem('ketty_version', appVersion);
-  }el.classList.remove('show');},1800); }
+// Force reset si ancienne version détectée
+var appVersion = '2026-04-10-v1';
+if (localStorage.getItem('ketty_version') !== appVersion) {
+  localStorage.removeItem('ketty_ops');
+  localStorage.removeItem('ketty_budgets');
+  localStorage.removeItem('ketty_enveloppes');
+  localStorage.setItem('ketty_version', appVersion);
+}
+
+function showSave() { var el=document.getElementById('saveIndicator'); el.classList.add('show'); setTimeout(function(){ el.classList.remove('show'); },1800); }
 
 // ── INIT ──────────────────────────────────────
 function initOps() {
@@ -1012,37 +1020,7 @@ function renderEnv() {
 
   grid.innerHTML = h;
 }
-function renderEnv_OLD() {
-  var mois=document.getElementById('envMois').value;
-  var envM=enveloppes.filter(function(e){return e.mois===mois;});
-  var grid=document.getElementById('envGrid'), totalBox=document.getElementById('envTotalBox');
-  if(!envM.length){grid.innerHTML='<div class="empty-state"><div class="emoji">📬</div><p>Aucune enveloppe pour ce mois.</p></div>';totalBox.innerHTML='';return;}
-  var totalBudget=envM.reduce(function(s,e){return s+e.montant;},0);
-  var totalDep=envM.reduce(function(s,e){
-    var dep=ops.filter(function(o){return o.date.indexOf(e.mois)===0&&o.categorie===e.cat&&o.montant<0;}).reduce(function(ss,o){return ss+Math.abs(o.montant);},0);
-    return s+Math.min(dep,e.montant);
-  },0);
-  var dispo=totalBudget-totalDep;
-  var tb='<div class="env-total-box"><div><div class="elabel">Budget total enveloppes</div>';
-  tb+='<div style="font-size:0.66rem;color:#9090a0;margin-top:2px">'+envM.length+' enveloppes &middot; '+fmtMois(mois+'-01')+'</div></div>';
-  tb+='<div style="text-align:right"><div class="elabel">Disponible</div><div class="eval '+(dispo>=0?'ok':'bad')+'">'+dispo.toFixed(0)+'&nbsp;€</div></div></div>';
-  totalBox.innerHTML=tb;
-  var h='';
-  envM.forEach(function(e){
-    var dep=ops.filter(function(o){return o.date.indexOf(e.mois)===0&&o.categorie===e.cat&&o.montant<0;}).reduce(function(s,o){return s+Math.abs(o.montant);},0);
-    var pct=Math.min(100,Math.round((dep/e.montant)*100)), reste=e.montant-dep;
-    var state=dep>e.montant?'over':pct>80?'warn':'ok';
-    var color=state==='over'?'#e07070':state==='warn'?'#e6a817':'#6ecba0';
-    h+='<div class="env-card '+state+'">';
-    h+='<div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="env-icon">'+gi(e.cat)+'</div>';
-    h+='<button data-cat="'+e.cat+'" data-mois="'+e.mois+'" onclick="deleteEnv(this.dataset.cat,this.dataset.mois)" style="background:none;border:none;color:var(--border);cursor:pointer;font-size:0.72rem;padding:0">✕</button></div>';
-    h+='<div class="env-name">'+e.cat+'</div>';
-    h+='<div class="env-amounts"><span class="spent">'+dep.toFixed(0)+'&nbsp;€</span> <span class="total">/ '+e.montant.toFixed(0)+'&nbsp;€</span></div>';
-    h+='<div class="env-bar-bg"><div class="env-bar-fill" style="width:'+pct+'%;background:'+color+'"></div></div>';
-    h+='<div class="env-reste '+state+'">'+(state==='over'?'⚠️ Dépassé de '+fmtA(Math.abs(reste)):state==='warn'?'⚡ Reste '+fmtA(reste):'✓ Reste '+fmtA(reste))+'</div></div>';
-  });
-  grid.innerHTML=h;
-}
+
 
 // ── SIMULATEUR ────────────────────────────────
 function renderSimCats() {
@@ -1226,7 +1204,7 @@ function buildRaw() {
   {d:'2026-02-06',l:'Beaute Privee remb.',m:29.89,c:'Remboursements',mode:'CB'},
   {d:'2026-02-06',l:'TikTok Shop',m:-18.60,c:'Shopping autres',mode:'CB'},
   {d:'2026-02-06',l:'La Bonne Fortune Créteil',m:-13.00,c:'Tabac / Presse',mode:'CB'},
-  {d:'2026-02-06',l:"L'Arina Créteil",m:-9.90,c:'Restauration / Livraison',mode:'CB'},
+  {d:'2026-02-06',l:'L\'Arina Créteil',m:-9.90,c:'Restauration / Livraison',mode:'CB'},
   {d:'2026-02-06',l:'SC-Riquet Créteil',m:-9.90,c:'Alimentation',mode:'CB'},
   {d:'2026-02-06',l:'PAYPAL Savage X',m:-41.90,c:'Shopping vêtements',mode:'CB'},
   {d:'2026-02-07',l:'La Bonne Fortune Créteil',m:-13.00,c:'Tabac / Presse',mode:'CB'},
@@ -1299,7 +1277,7 @@ function buildRaw() {
   {d:'2026-03-06',l:'Tabac de l Echa Créteil',m:-12.90,c:'Tabac / Presse',mode:'CB'},
   {d:'2026-03-06',l:'Klarna Temu.com',m:-4.96,c:'Courses en ligne',mode:'CB'},
   {d:'2026-03-06',l:'Klarna Temu.com',m:-4.42,c:'Courses en ligne',mode:'CB'},
-  {d:'2026-03-06',l:"L'Arina Créteil",m:-6.00,c:'Restauration / Livraison',mode:'CB'},
+  {d:'2026-03-06',l:'L\'Arina Créteil',m:-6.00,c:'Restauration / Livraison',mode:'CB'},
   {d:'2026-03-06',l:'Klarna Temu.com',m:-4.39,c:'Courses en ligne',mode:'CB'},
   {d:'2026-03-06',l:'Klarna Temu.com',m:-6.84,c:'Courses en ligne',mode:'CB'},
   {d:'2026-03-06',l:'Klarna Temu.com',m:-4.40,c:'Courses en ligne',mode:'CB'},
@@ -1319,7 +1297,7 @@ function buildRaw() {
   {d:'2026-03-11',l:'Netflix',m:-7.99,c:'Abonnements',mode:'CB'},
   {d:'2026-03-11',l:'Loyer ESH Maisons-Alfort',m:-778.38,c:'Logement',mode:'CB'},
   {d:'2026-03-12',l:'Google Play',m:-22.00,c:'Abonnements',mode:'CB'},
-  {d:'2026-03-12',l:"L'Arina Créteil",m:-6.00,c:'Restauration / Livraison',mode:'CB'},
+  {d:'2026-03-12',l:'L\'Arina Créteil',m:-6.00,c:'Restauration / Livraison',mode:'CB'},
   {d:'2026-03-12',l:'Franprix Paris',m:-5.59,c:'Alimentation',mode:'CB'},
   {d:'2026-03-12',l:'La Bonne Fortune Créteil',m:-13.00,c:'Tabac / Presse',mode:'CB'},
   {d:'2026-03-12',l:'Franprix Paris',m:-11.91,c:'Alimentation',mode:'CB'},
@@ -1342,7 +1320,7 @@ function buildRaw() {
   {d:'2026-03-17',l:'Le Condorcet Maisons-Alfort',m:-13.00,c:'Tabac / Presse',mode:'CB'},
   {d:'2026-03-18',l:'Eurl Autour du Pain Créteil',m:-3.70,c:'Alimentation',mode:'CB'},
   {d:'2026-03-18',l:'Virement depuis Revolut',m:50.00,c:'Virements reçus',mode:'Virement'},
-  {d:'2026-03-18',l:"L'Arina Créteil",m:-6.00,c:'Restauration / Livraison',mode:'CB'},
+  {d:'2026-03-18',l:'L\'Arina Créteil',m:-6.00,c:'Restauration / Livraison',mode:'CB'},
   {d:'2026-03-18',l:'La Bonne Fortune Créteil',m:-20.20,c:'Tabac / Presse',mode:'CB'},
   {d:'2026-03-18',l:'Virement depuis Revolut',m:100.00,c:'Virements reçus',mode:'Virement'},
   {d:'2026-03-19',l:'La Bonne Fortune Créteil',m:-13.20,c:'Tabac / Presse',mode:'CB'},
@@ -1361,7 +1339,7 @@ function buildRaw() {
   {d:'2026-03-23',l:'PAYPAL LeBonCoin',m:-6.34,c:'Shopping autres',mode:'CB'},
   {d:'2026-03-23',l:'Franprix Maisons-Alfort',m:-31.89,c:'Alimentation',mode:'CB'},
   {d:'2026-03-24',l:'La Bonne Fortune Créteil',m:-13.00,c:'Tabac / Presse',mode:'CB'},
-  {d:'2026-03-24',l:"L'Arina Créteil",m:-6.00,c:'Restauration / Livraison',mode:'CB'},
+  {d:'2026-03-24',l:'L\'Arina Créteil',m:-6.00,c:'Restauration / Livraison',mode:'CB'},
   {d:'2026-03-25',l:'Frais rejet prélèvement (09)',m:-10.00,c:'Divers',mode:'Prelevement'},
   {d:'2026-03-25',l:'Frais rejet prélèvement (06)',m:-10.00,c:'Divers',mode:'Prelevement'},
   {d:'2026-03-27',l:'SC-Riquet Dis Créteil',m:-2.59,c:'Alimentation',mode:'CB'},
@@ -1394,7 +1372,7 @@ function buildRaw() {
   {d:'2026-04-06',l:'Franprix Maisons-Alfort (Revolut)',m:-6.10,c:'Alimentation',mode:'CB'},
   {d:'2026-04-07',l:'CAF Val-de-Marne (avril)',m:401.40,c:'CAF / Aides',mode:'Virement'},
   {d:'2026-04-07',l:'Maxi Zoo France',m:-77.75,c:'Animaux / Sam',mode:'CB'},
-  {d:'2026-04-07',l:"L'Eau Vive (alimentation)",m:-62.56,c:'Alimentation',mode:'CB'},
+  {d:'2026-04-07',l:'L\'Eau Vive (alimentation)',m:-62.56,c:'Alimentation',mode:'CB'},
   {d:'2026-04-07',l:'Miettes 1&Co',m:-10.49,c:'Alimentation',mode:'CB'},
   {d:'2026-04-07',l:'Cdiscount - Support plantes + canisses balcon',m:-127.29,c:'Travaux / Maison',mode:'CB'},
   {d:'2026-04-07',l:'GiFi (Revolut)',m:-16.99,c:'Shopping autres',mode:'CB'},
@@ -1848,13 +1826,6 @@ function renderAccueil() {
 }
 
 </script>
-<script>
-// Désactiver le service worker pour éviter les problèmes de cache
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(function(registrations) {
-    for(let reg of registrations) { reg.unregister(); }
-  });
-}
-</script>
+
 </body>
 </html>
