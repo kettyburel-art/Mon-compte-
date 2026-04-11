@@ -469,7 +469,7 @@ input:focus,select:focus{border-color:var(--accent);}
   <div class="card-box">
     <h2>&#128198; Simulation budg&eacute;taire</h2>
     <p style="font-size:0.78rem;color:var(--muted);margin-bottom:16px">Bas&eacute;e sur tes donn&eacute;es r&eacute;elles — salaire variable, charges fixes, pockets Revolut.</p>
-    <div id="simContent"></div>
+    <div id="prevContent"></div><div id="simContent"></div>
   </div>
 </div>
 
@@ -1380,139 +1380,86 @@ function buildRaw() {
   {d:'2026-04-07',l:'Virement Nickel vers Revolut',m:-20.00,c:'Virements envoyés',mode:'Virement'},
   {d:'2026-04-07',l:'Retrait DAB',m:-50.00,c:'Retraits',mode:'Especes'},
   {d:'2026-04-09',l:'Klarna Temu.com',m:-3.06,c:'Courses en ligne',mode:'CB'},
+  {d:'2026-04-10',l:'Florent Francietta - Complement salaire mars (Revolut)',m:350.00,c:'Salaire / Revenus',mode:'Virement'},
+  {d:'2026-04-10',l:'Le Condorcet (Revolut)',m:-13.00,c:'Tabac / Presse',mode:'CB'},
+  {d:'2026-04-10',l:'Franprix (Revolut)',m:-27.79,c:'Alimentation',mode:'CB'},
+  {d:'2026-04-10',l:'Auchan (Revolut)',m:-156.61,c:'Alimentation',mode:'CB'},
+  {d:'2026-04-10',l:'Les Tetes Vertes bio (Revolut)',m:-20.05,c:'Alimentation',mode:'CB'},
+  {d:'2026-04-10',l:'Franprix (Revolut)',m:-23.45,c:'Alimentation',mode:'CB'},
   {d:'2026-05-25',l:'FMA Services - Plomberie complète (espèces)',m:-189.75,c:'Travaux / Maison',mode:'Especes'}
   ];
 }
 // ── PREVISIONNEL ──────────────────────────────
 function renderPrevisionnel() {
   var el = document.getElementById('prevContent');
-  if (!el) return;
+  if (!el) { console.log('prevContent not found'); return; }
 
-  // Revenus fixes mensuels
-  var revenus = 2260; // salaire ~1350 + CAF ~330 + especes ~580
-
-  // Calcul moyennes sur les 3 derniers mois (jan/fev/mars)
-  var moisRef = ['2026-01','2026-02','2026-03'];
-  function moyDep(cat) {
-    var total = 0; var count = 0;
-    moisRef.forEach(function(m) {
-      var dep = ops.filter(function(o){return o.date.indexOf(m)===0 && o.categorie===cat && o.montant<0;})
-        .reduce(function(s,o){return s+Math.abs(o.montant);},0);
-      if (dep > 0) { total += dep; count++; }
-    });
-    return count > 0 ? total / count : 0;
-  }
-
-  // Charges fixes connues (mensuelles)
-  var chargesFixes = [
-    {label:'Loyer ESH Maisons-Alfort', montant:778.38},
-    {label:'Navigo Annuel', montant:90.80},
-    {label:'Bouygues Telecom (2 lignes)', montant:73.00},
-    {label:'Acheel Assurance', montant:26.35},
-    {label:'Avocat Me El Sargologo', montant:250.00},
+  var moisSim = [
+    {id:'2026-04', nom:'Avril 2026',    salaire:1110, extra:0,      note:''},
+    {id:'2026-05', nom:'Mai 2026',      salaire:1250, extra:189.75, note:'Plomberie FMA'},
+    {id:'2026-06', nom:'Juin 2026',     salaire:1250, extra:0,      note:''},
+    {id:'2026-07', nom:'Juillet 2026',  salaire:1250, extra:165,    note:'Facture EDF'},
+    {id:'2026-08', nom:'Aout 2026',     salaire:1250, extra:0,      note:''},
+    {id:'2026-09', nom:'Sept. 2026',    salaire:1250, extra:165,    note:'EDF + rentree'},
+    {id:'2026-10', nom:'Oct. 2026',     salaire:1250, extra:0,      note:''},
+    {id:'2026-11', nom:'Nov. 2026',     salaire:1250, extra:165,    note:'Facture EDF'},
+    {id:'2026-12', nom:'Dec. 2026',     salaire:1250, extra:0,      note:''},
   ];
-  var totalFixe = chargesFixes.reduce(function(s,c){return s+c.montant;},0); // ~1218
 
-  // Charges variables moyennes (hors fixes)
-  var catVariables = [
-    'Alimentation','Restauration / Livraison','Tabac / Presse',
-    'Courses en ligne','Abonnements','Shopping vêtements',
-    'Shopping autres','Santé / Bien-être','Divers','Retraits'
-  ];
-  var totalVariable = 0;
-  catVariables.forEach(function(c){ totalVariable += moyDep(c); });
-  // Objectif : 500€/mois sur Revolut (Alimentation 200 + Tabac 200 + Divers 100)
-  var totalVariableObjectif = Math.min(totalVariable, 500);
-  totalVariable = totalVariableObjectif;
+  var caf = 401.40;
+  var especes = 580;       // avances Starsnett Services (irregulier, via Florent ou M. Nimaga)
+  var chargesFixes = 1218; // loyer+avocat+navigo+bouygues+acheel
+  var pockets = 550;       // revolut: alim+tabac+divers+epargne
+  var varMoy = 250;        // petits achats variables
+  var solde = 5;           // solde au 9 avril
 
-  // Charges spéciales par mois
-  var special = {
-    '2026-04': [],
-    '2026-05': [{label:'EDF (bimestriel)', montant:165}],
-    '2026-06': [],
-    '2026-07': [{label:'EDF (bimestriel)', montant:165}],
-    '2026-08': [],
-    '2026-09': [{label:'EDF (bimestriel)', montant:165}],
-    '2026-10': [],
-    '2026-11': [{label:'EDF (bimestriel)', montant:165}],
-    '2026-12': [],
-    '2027-01': [{label:'EDF (bimestriel)', montant:165}],
-    '2027-02': [],
-    '2027-03': [{label:'EDF (bimestriel)', montant:165}],
-  };
+  var h = '<table style="width:100%;border-collapse:collapse;font-size:0.75rem;margin-bottom:16px">';
+  h += '<thead><tr style="background:var(--ink);color:#fff">';
+  h += '<th style="padding:8px 6px;text-align:left">Mois</th>';
+  h += '<th style="padding:8px 6px;text-align:right">Revenus</th>';
+  h += '<th style="padding:8px 6px;text-align:right">Charges</th>';
+  h += '<th style="padding:8px 6px;text-align:right">Balance</th>';
+  h += '<th style="padding:8px 6px;text-align:right">Cumule</th>';
+  h += '</tr></thead><tbody>';
 
-  var moisLabels = {
-    '2026-04':'Avril 2026','2026-05':'Mai 2026','2026-06':'Juin 2026',
-    '2026-07':'Juil. 2026','2026-08':'Août 2026','2026-09':'Sept. 2026',
-    '2026-10':'Oct. 2026','2026-11':'Nov. 2026','2026-12':'Déc. 2026',
-    '2027-01':'Janv. 2027','2027-02':'Févr. 2027','2027-03':'Mars 2027'
-  };
+  moisSim.forEach(function(m, idx) {
+    // Use real data if available
+    var opsM = ops.filter(function(o){ return o.date.indexOf(m.id) === 0; });
+    var realRev = opsM.filter(function(o){ return o.montant > 0; }).reduce(function(s,o){ return s+o.montant; }, 0);
+    var realDep = opsM.filter(function(o){ return o.montant < 0; }).reduce(function(s,o){ return s+Math.abs(o.montant); }, 0);
 
-  var moisList = Object.keys(moisLabels);
-  var soldeCumul = 4.49; // solde actuel
-  // Enlever le EDF de mars qui est encore dû
-  soldeCumul -= 329.82;
+    var revenus = realRev > 200 ? realRev : m.salaire + caf + especes;
+    var charges = realDep > 200 ? realDep : chargesFixes + pockets + varMoy + m.extra;
+    var balance = revenus - charges;
+    solde += balance;
 
-  // Résumé en haut
-  var infoH = '<div class="prev-edf-alert">⚡ <strong>EDF 329,82€ dû avant le 30/03</strong> — ton solde réel après paiement sera <strong style="color:var(--red)">'+( -325.33).toFixed(2).replace('.',',')+' €</strong>. Prévoir un virement depuis Revolut.</div>';
+    var balColor = balance >= 0 ? '#6ecba0' : '#e07070';
+    var cumColor = solde >= 0 ? '#6ecba0' : '#e07070';
+    var rowBg = idx % 2 === 0 ? 'var(--paper)' : 'var(--cream)';
 
-  infoH += '<div class="prev-info-grid">';
-  infoH += '<div class="prev-info-card"><div class="label">Revenus fixes/mois</div><div class="val" style="color:var(--green)">+'+fmtA(revenus)+'</div></div>';
-  infoH += '<div class="prev-info-card"><div class="label">Charges fixes/mois</div><div class="val" style="color:var(--red)">-'+fmtA(totalFixe)+'</div></div>';
-  infoH += '<div class="prev-info-card"><div class="label">Dépenses variables moy.</div><div class="val" style="color:var(--red)">-'+fmtA(totalVariable)+'</div></div>';
-  infoH += '<div class="prev-info-card"><div class="label">Reste théorique/mois</div>';
-  var reste = revenus - totalFixe - totalVariable;
-  infoH += '<div class="val '+(reste>=0?'prev-solde-pos':'prev-solde-neg')+'">'+fmtN(reste)+'</div></div>';
-  infoH += '</div>';
-
-  // Tableau
-  var h = infoH;
-  h += '<div style="overflow-x:auto"><table class="prev-table">';
-  h += '<thead><tr><th>Mois</th><th>Revenus</th><th>Charges fixes</th><th>Variables</th><th>Dépenses spéciales</th><th>Balance</th><th>Solde cumulé</th></tr></thead>';
-  h += '<tbody>';
-
-  moisList.forEach(function(mois) {
-    var sp = special[mois] || [];
-    var spTotal = sp.reduce(function(s,x){return s+x.montant;},0);
-    var depTotal = totalFixe + totalVariable + spTotal;
-    var balance = revenus - depTotal;
-    soldeCumul += balance;
-
-    var balClass = balance >= 0 ? 'prev-solde-pos' : 'prev-solde-neg';
-    var cumulClass = soldeCumul >= 0 ? 'prev-solde-pos' : 'prev-solde-neg';
-    var badge = '';
-    if (soldeCumul < 0) badge = '<span class="prev-badge danger">Déficit</span>';
-    else if (soldeCumul < 100) badge = '<span class="prev-badge warn">Serré</span>';
-    else badge = '<span class="prev-badge ok">OK</span>';
-
-    var spLabel = sp.length ? sp.map(function(x){return x.label+' -'+x.montant.toFixed(0)+'€';}).join('<br>') : '–';
-
-    h += '<tr>';
-    h += '<td><strong>'+moisLabels[mois]+'</strong></td>';
-    h += '<td style="color:var(--green)">+'+fmtA(revenus)+'</td>';
-    h += '<td>-'+fmtA(totalFixe)+'</td>';
-    h += '<td>-'+fmtA(totalVariable)+'</td>';
-    h += '<td style="font-size:0.72rem;color:var(--muted)">'+spLabel+'</td>';
-    h += '<td class="'+balClass+'">'+fmtN(balance)+'</td>';
-    h += '<td class="'+cumulClass+'">'+soldeCumul.toFixed(2).replace('.',',')+'€'+badge+'</td>';
+    h += '<tr style="background:' + rowBg + '">';
+    h += '<td style="padding:7px 6px;font-weight:600">' + m.nom + '</td>';
+    h += '<td style="padding:7px 6px;text-align:right;font-family:monospace;color:#6ecba0">+' + revenus.toFixed(0) + '</td>';
+    h += '<td style="padding:7px 6px;text-align:right;font-family:monospace;color:#e07070">-' + charges.toFixed(0) + '</td>';
+    h += '<td style="padding:7px 6px;text-align:right;font-family:monospace;font-weight:700;color:' + balColor + '">' + (balance >= 0 ? '+' : '') + balance.toFixed(0) + '</td>';
+    h += '<td style="padding:7px 6px;text-align:right;font-family:monospace;font-weight:700;color:' + cumColor + '">' + solde.toFixed(0) + '</td>';
     h += '</tr>';
+    if (m.note) {
+      h += '<tr style="background:' + rowBg + '"><td colspan="5" style="padding:2px 6px 8px;font-size:0.67rem;color:var(--muted)">⚠️ ' + m.note + (m.extra > 0 ? ' (' + m.extra + ' EUR)' : '') + '</td></tr>';
+    }
   });
 
-  h += '</tbody></table></div>';
-
-  // Conseils bas de page
-  h += '<div style="margin-top:16px;background:var(--cream);border-radius:10px;padding:13px 15px;font-size:0.78rem;line-height:1.7;color:var(--ink)">';
-  h += '<strong>💡 Points clés sur 12 mois :</strong><br>';
-  h += '• Tes charges fixes représentent <strong>'+Math.round(totalFixe/revenus*100)+'%</strong> de tes revenus — très élevé.<br>';
-  h += '• Revolut : 3 poches actives (Alimentation 200€ + Tabac 200€ + Divers 100€ = 500€/mois).<br>';
-  h += '• <strong>Priorité :</strong> réduire les achats Temu/Klarna et les livraisons pour créer une épargne tampon.<br>';
-  h += '• Penser à provisionner <strong>~165€ tous les 2 mois</strong> pour EDF.';
+  h += '</tbody></table>';
+  h += '<div style="background:var(--cream);border-radius:10px;padding:12px;font-size:0.74rem;line-height:1.7;color:var(--muted)">';
+  h += '<strong style="color:var(--ink)">Hypotheses</strong><br>';
+  h += 'Salaire declare : ~1 250 EUR | CAF : 401 EUR | Especes Starsnett : ~580 EUR<br>';
+  h += 'Charges fixes : 1 218 EUR | Revolut pockets : 550 EUR<br>';
+  h += 'Variables estimees : 250 EUR/mois<br>';
+  h += 'Solde de depart : 5 EUR (9 avril 2026)';
   h += '</div>';
 
   el.innerHTML = h;
 }
-
-
 // ── PLAN ENVELOPPES RECOMMANDÉ ─────────────────
 function loadPlanRecommande() {
   var mois = '2026-04';
@@ -1823,6 +1770,52 @@ function renderAccueil() {
   html += '<div class="dash-card blue"><div style="font-size:0.84rem;font-weight:600">💛 Recharge pockets Revolut</div><div style="font-size:0.76rem;color:var(--muted);margin-top:4px">Le 12 avril · 550€ à virer (+ 50€ épargne)</div><div style="font-size:0.76rem;color:var(--muted);margin-top:2px">🏠 Loyer + ⚖️ Avocat prévus le 10 avril</div></div>';
 
   el.innerHTML = html;
+}
+
+
+// ── SIMULATION 6 MOIS ────────────────────────
+function renderSimulation() {
+  var el = document.getElementById('simContent');
+  if (!el) return;
+  var salaireMoy = 1250;
+  var caf = 401.40;
+  var chargesFixes = 1218;
+  var pockets = 550;
+  var varMoy = 280;
+  var moisSim = [
+    {id:'2026-04', nom:'Avril', extra:[], note:'Mois charge'},
+    {id:'2026-05', nom:'Mai', extra:[{l:'Plomberie FMA', m:189.75}], note:'Travaux plomberie'},
+    {id:'2026-06', nom:'Juin', extra:[], note:'Mois standard'},
+    {id:'2026-07', nom:'Juil.', extra:[{l:'EDF bimestriel', m:165}], note:'Facture EDF'},
+    {id:'2026-08', nom:'Aout', extra:[], note:'Mois standard'},
+    {id:'2026-09', nom:'Sept.', extra:[{l:'EDF bimestriel', m:165}], note:'EDF + rentree'},
+  ];
+  var solde = 5.07;
+  var h = '<div style="margin:16px 0 10px;font-size:0.72rem;font-weight:700;text-transform:uppercase;color:var(--muted)">Projection 6 mois</div>';
+  h += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:0.74rem">';
+  h += '<tr style="background:var(--ink);color:var(--paper)"><th style="padding:7px;text-align:left">Mois</th><th style="padding:7px;text-align:right">Revenus</th><th style="padding:7px;text-align:right">Charges</th><th style="padding:7px;text-align:right">Balance</th><th style="padding:7px;text-align:right">Cumule</th></tr>';
+  moisSim.forEach(function(m, i) {
+    var opsRev = ops.filter(function(o){return o.date.indexOf(m.id)===0&&o.montant>0;}).reduce(function(s,o){return s+o.montant;},0);
+    var opsDep = ops.filter(function(o){return o.date.indexOf(m.id)===0&&o.montant<0;}).reduce(function(s,o){return s+Math.abs(o.montant);},0);
+    var extras = m.extra.reduce(function(s,e){return s+e.m;},0);
+    var revenus = opsRev > 100 ? opsRev : salaireMoy + caf;
+    var charges = opsDep > 100 ? opsDep : chargesFixes + pockets + varMoy + extras;
+    var balance = revenus - charges;
+    solde += balance;
+    var bc = balance >= 0 ? '#6ecba0' : '#e07070';
+    var sc = solde >= 0 ? '#6ecba0' : '#e07070';
+    var bg = i%2===0 ? '' : 'background:var(--cream)';
+    h += '<tr style="'+bg+'"><td style="padding:7px;font-weight:600">'+m.nom+'</td>';
+    h += '<td style="padding:7px;text-align:right;font-family:monospace;color:#6ecba0">+'+revenus.toFixed(0)+'</td>';
+    h += '<td style="padding:7px;text-align:right;font-family:monospace;color:#e07070">-'+charges.toFixed(0)+'</td>';
+    h += '<td style="padding:7px;text-align:right;font-family:monospace;font-weight:700;color:'+bc+'">'+(balance>=0?'+':'')+balance.toFixed(0)+'</td>';
+    h += '<td style="padding:7px;text-align:right;font-family:monospace;font-weight:700;color:'+sc+'">'+solde.toFixed(0)+'</td></tr>';
+    if(extras>0){
+      h += '<tr style="'+bg+'"><td colspan="5" style="padding:2px 7px 8px;font-size:0.67rem;color:var(--muted)">'+m.extra.map(function(e){return e.l+' -'+e.m+'EUR';}).join(' / ')+' | '+m.note+'</td></tr>';
+    }
+  });
+  h += '</table></div>';
+  el.innerHTML = h;
 }
 
 </script>
