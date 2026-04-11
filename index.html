@@ -272,7 +272,7 @@ input:focus,select:focus{border-color:var(--accent);}
         </div>
         <div onclick="editRevolut()" style="cursor:pointer" title="Appuyer pour modifier">
           <div class="solde-label">💛 Revolut ✏️</div>
-          <div class="solde-amount positive" id="headerRevolut" style="font-size:1.1rem">3,96 &euro;</div>
+          <div class="solde-amount positive" id="headerRevolut" style="font-size:1.1rem">91,56 &euro;</div>
         </div>
       </div>
       <div style="font-size:0.65rem;color:#9090a0;margin-top:3px;text-align:right">Total : <span id="headerTotal">54,77 &euro;</span></div>
@@ -333,17 +333,17 @@ input:focus,select:focus{border-color:var(--accent);}
 <div id="panel-enveloppes" class="panel">
   <div class="card-box">
     <h2>&#128179; Enveloppes budget</h2>
-    <p style="font-size:0.77rem;color:var(--muted);margin-bottom:11px;line-height:1.5">R&eacute;pars ton salaire dans des enveloppes. Une fois vide = stop.</p>
     <div class="env-setup">
       <div class="env-setup-row">
         <div><label>Cat&eacute;gorie</label>
           <select id="envCat">
-            <option>Alimentation</option><option>Courses en ligne</option>
-            <option>Restauration / Livraison</option><option>Tabac / Presse</option>
-            <option>Transport</option><option>T&eacute;l&eacute;phonie</option>
-            <option>Abonnements</option><option>Shopping v&ecirc;tements</option>
-            <option>Shopping autres</option><option>Sant&eacute; / Bien-&ecirc;tre</option>
-            <option>Travaux / Maison</option><option>Frais juridiques</option><option>Electricité / EDF</option><option>Divers</option>
+            <option>Alimentation</option><option>Tabac / Presse</option>
+            <option>Divers</option><option>Vacances</option>
+            <option>Logement</option><option>Transport</option>
+            <option>T&eacute;l&eacute;phonie</option><option>Abonnements</option>
+            <option>Electricit&eacute; / EDF</option><option>Frais juridiques</option>
+            <option>Sant&eacute; / Bien-&ecirc;tre</option><option>Courses en ligne</option>
+            <option>Restauration / Livraison</option><option>Travaux / Maison</option>
           </select>
         </div>
         <div><label>Budget (&euro;)</label><input type="number" id="envMontant" placeholder="ex: 150" step="5" min="0"></div>
@@ -357,8 +357,8 @@ input:focus,select:focus{border-color:var(--accent);}
       </div>
     </div>
     <div id="envTotalBox"></div>
+    <div id="envGrid"></div>
   </div>
-  <div class="env-grid" id="envGrid"></div>
 </div>
 
 <div id="panel-simulateur" class="panel">
@@ -614,7 +614,7 @@ function saveLS() {
 }
 function getLS(k, def) { try { var s=localStorage.getItem(k); return s?JSON.parse(s):def; } catch(e){return def;} }
 // Force reset si ancienne version détectée
-var appVersion = '2026-04-10-v1';
+var appVersion = '2026-04-11-v1';
 if (localStorage.getItem('ketty_version') !== appVersion) {
   localStorage.removeItem('ketty_ops');
   localStorage.removeItem('ketty_budgets');
@@ -952,70 +952,72 @@ function renderEnv() {
     totalBox.innerHTML = ''; return;
   }
 
-  // Totaux globaux
-  var totalBudget = envM.reduce(function(s,e){ return s+e.montant; }, 0);
-  var totalDep = envM.reduce(function(s,e){
-    var dep = ops.filter(function(o){ return o.date.indexOf(e.mois)===0 && o.categorie===e.cat && o.montant<0; })
-      .reduce(function(ss,o){ return ss+Math.abs(o.montant); }, 0);
-    return s + Math.min(dep, e.montant);
-  }, 0);
-  var dispo = totalBudget - totalDep;
-
-  totalBox.innerHTML = '<div class="env-total-box"><div><div class="elabel">Budget total</div>'
-    + '<div style="font-size:0.66rem;color:#9090a0;margin-top:2px">' + envM.length + ' enveloppes &middot; ' + fmtMois(mois+'-01') + '</div></div>'
-    + '<div style="text-align:right"><div class="elabel">Disponible</div>'
-    + '<div class="eval ' + (dispo>=0?'ok':'bad') + '">' + dispo.toFixed(0) + '&nbsp;€</div></div></div>';
-
-  // Séparer Nickel et Revolut
-  var nickel = envM.filter(function(e){ return e.compte === 'Nickel' || !e.compte; });
-  var revolut = envM.filter(function(e){ return e.compte === 'Revolut'; });
-
-  function buildCards(list) {
-    return list.map(function(e) {
-      var dep = ops.filter(function(o){ return o.date.indexOf(e.mois)===0 && o.categorie===e.cat && o.montant<0; })
-        .reduce(function(s,o){ return s+Math.abs(o.montant); }, 0);
-      var pct = Math.min(100, Math.round((dep/e.montant)*100));
-      var reste = e.montant - dep;
-      var state = dep > e.montant ? 'over' : pct > 80 ? 'warn' : 'ok';
-      var color = state==='over' ? '#e07070' : state==='warn' ? '#e6a817' : '#6ecba0';
-      return '<div class="env-card ' + state + '">'
-        + '<div style="display:flex;justify-content:space-between;align-items:flex-start">'
-        + '<div class="env-icon">' + gi(e.cat) + '</div>'
-        + '<button data-cat="' + e.cat + '" data-mois="' + e.mois + '" onclick="deleteEnv(this.dataset.cat,this.dataset.mois)" style="background:none;border:none;color:var(--border);cursor:pointer;font-size:0.72rem;padding:0">✕</button></div>'
-        + '<div class="env-name">' + e.cat + '</div>'
-        + (e.note ? '<div style="font-size:0.62rem;color:var(--muted);margin-bottom:4px">' + e.note + '</div>' : '')
-        + '<div class="env-amounts"><span class="spent">' + dep.toFixed(0) + '&nbsp;€</span> <span class="total">/ ' + e.montant.toFixed(0) + '&nbsp;€</span></div>'
-        + '<div class="env-bar-bg"><div class="env-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>'
-        + '<div class="env-reste ' + state + '">' + (state==='over'?'⚠️ Dépassé de '+fmtA(Math.abs(reste)):state==='warn'?'⚡ Reste '+fmtA(reste):'✓ Reste '+fmtA(reste)) + '</div>'
-        + '</div>';
-    }).join('');
+  function getDep(cat) {
+    return ops.filter(function(o){ return o.date.indexOf(mois)===0&&o.categorie===cat&&o.montant<0; })
+      .reduce(function(s,o){ return s+Math.abs(o.montant); },0);
   }
 
+  var totalBudget = envM.reduce(function(s,e){return s+e.montant;},0);
+  var totalDep = envM.reduce(function(s,e){return s+Math.min(getDep(e.cat),e.montant);},0);
+  totalBox.innerHTML = '<div class="env-total-box"><div><div class="elabel">Budget total</div>'
+    +'<div style="font-size:0.66rem;color:#9090a0">'+envM.length+' enveloppes</div></div>'
+    +'<div style="text-align:right"><div class="elabel">Disponible</div>'
+    +'<div class="eval '+(totalBudget-totalDep>=0?'ok':'bad')+'">'+(totalBudget-totalDep).toFixed(0)+'&nbsp;€</div></div></div>';
+
+  var shortNames = {'Logement':'Loyer','Frais juridiques':'Avocat','Transport':'Navigo',
+    'Téléphonie':'Tél.','Santé / Bien-être':'Santé','Abonnements':'Abonnem.',
+    'Electricité / EDF':'EDF','Alimentation':'Aliment.','Tabac / Presse':'Tabac',
+    'Restauration / Livraison':'Restau.','Courses en ligne':'Courses'};
+
+  function card(e) {
+    var dep = getDep(e.cat);
+    var pct = Math.min(100, e.montant>0?Math.round(dep/e.montant*100):0);
+    var reste = e.montant - dep;
+    var over = dep>e.montant, warn = pct>80;
+    var col = over?'#e07070':warn?'#e6a817':'#6ecba0';
+    var lbl = over?'⚠️ +'+Math.abs(reste).toFixed(0)+'€':'✓ '+reste.toFixed(0)+'€';
+    var nm = shortNames[e.cat]||e.cat;
+    return '<div style="background:#fff;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,0.1);overflow:hidden">'
+      +'<div style="height:4px;background:'+col+'"></div>'
+      +'<div style="padding:10px">'
+      +'<div style="font-size:1.3rem;margin-bottom:3px">'+gi(e.cat)+'</div>'
+      +'<div style="font-size:0.73rem;font-weight:700;color:#1a1a2e;margin-bottom:6px">'+nm+'</div>'
+      +'<div style="font-size:1.05rem;font-weight:800;font-family:monospace;color:'+col+'">'+dep.toFixed(0)
+      +'<span style="font-size:0.6rem;color:#bbb;font-weight:400">/'+e.montant.toFixed(0)+'€</span></div>'
+      +'<div style="height:5px;background:#f0ede8;border-radius:3px;margin:5px 0">'
+      +'<div style="height:5px;width:'+pct+'%;background:'+col+';border-radius:3px"></div></div>'
+      +'<div style="font-size:0.65rem;font-weight:700;color:'+col+'">'+lbl+'</div>'
+      +'</div></div>';
+  }
+
+  function section(label, color, list, extra) {
+    var total = list.reduce(function(s,e){return s+e.montant;},0);
+    var dep = list.reduce(function(s,e){return s+getDep(e.cat);},0);
+    var h = '<div style="margin:14px -16px 0;padding:8px 16px;background:'+color+';display:flex;justify-content:space-between;align-items:center">'
+      +'<span style="font-size:0.72rem;font-weight:800;color:#fff;letter-spacing:0.05em">'+label+'</span>'
+      +'<span style="font-size:0.78rem;font-weight:800;font-family:monospace;color:#fff">'+total.toFixed(0)+'€</span>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px -16px 0;padding:0 16px">';
+    list.forEach(function(e){ h += card(e); });
+    h += '</div>';
+    if (extra) h += extra;
+    return h;
+  }
+
+  var nickel = envM.filter(function(e){return e.compte==='Nickel'||!e.compte;});
+  var revolut = envM.filter(function(e){return e.compte==='Revolut';});
   var h = '';
 
-  // Section Nickel
-  if (nickel.length) {
-    var nickelTotal = nickel.reduce(function(s,e){return s+e.montant;},0);
-    h += '<div style="display:flex;align-items:center;gap:10px;margin:16px 0 10px">'
-      + '<div style="flex:1;height:1px;background:var(--border)"></div>'
-      + '<span style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;color:var(--ink);background:var(--ink);color:white;padding:3px 10px;border-radius:10px">💳 NICKEL — ' + nickelTotal.toFixed(0) + '&nbsp;€</span>'
-      + '<div style="flex:1;height:1px;background:var(--border)"></div></div>';
-    h += '<div class="env-grid">' + buildCards(nickel) + '</div>';
-  }
-
-  // Section Revolut
+  if (nickel.length) h += section('💳 NICKEL · Charges fixes', '#1a1a2e', nickel, '');
+  
   if (revolut.length) {
-    var revTotal = revolut.reduce(function(s,e){return s+e.montant;},0);
-    var revDep = revolut.reduce(function(s,e){
-      var dep=ops.filter(function(o){return o.date.indexOf(e.mois)===0&&o.categorie===e.cat&&o.montant<0;}).reduce(function(ss,o){return ss+Math.abs(o.montant);},0);
-      return s+dep;
-    },0);
-    var revReste = revTotal - revDep;
-    h += '<div style="display:flex;align-items:center;gap:10px;margin:20px 0 10px">'
-      + '<div style="flex:1;height:1px;background:var(--border)"></div>'
-      + '<span style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;background:#7b61ff;color:white;padding:3px 10px;border-radius:10px">💛 REVOLUT — ' + revReste.toFixed(0) + '&nbsp;€ restants</span>'
-      + '<div style="flex:1;height:1px;background:var(--border)"></div></div>';
-    h += '<div class="env-grid">' + buildCards(revolut) + '</div>';
+    var rT = revolut.reduce(function(s,e){return s+e.montant;},0);
+    var rD = revolut.reduce(function(s,e){return s+getDep(e.cat);},0);
+    var extra = '<div style="margin:8px -16px 0;padding:8px 16px;background:#f5f2ff;display:flex;justify-content:space-between">'
+      +'<span style="font-size:0.74rem;color:#7b61ff;font-weight:700">Pockets restantes</span>'
+      +'<span style="font-family:monospace;font-weight:800;color:'+(rT-rD>=0?'#7b61ff':'#e07070')+'">'+(rT-rD).toFixed(0)+'€</span>'
+      +'</div>';
+    h += section('💛 REVOLUT · Recharge le 12', '#7b61ff', revolut, extra);
   }
 
   grid.innerHTML = h;
@@ -1502,7 +1504,7 @@ function loadPlanRecommande() {
 
 // ── SOLDE REVOLUT MODIFIABLE ──────────────────
 function editRevolut() {
-  var cur = parseFloat(localStorage.getItem('ketty_revolut') || '3.96');
+  var cur = parseFloat(localStorage.getItem('ketty_revolut') || '91.56');
   var val = prompt('Solde Revolut actuel (€) :', cur.toFixed(2));
   if (val === null) return;
   var n = parseFloat(val.replace(',','.'));
@@ -1687,7 +1689,7 @@ function renderAccueil() {
 
   // Soldes
   var soldeNickel = parseFloat((document.getElementById('headerSolde').textContent || '0').replace(',','.').replace('€','').trim()) || 15.21;
-  var soldeRevolut = parseFloat(localStorage.getItem('ketty_revolut') || '3.96');
+  var soldeRevolut = parseFloat(localStorage.getItem('ketty_revolut') || '91.56');
   var soldeTotal = soldeNickel + soldeRevolut;
 
   // Alertes
