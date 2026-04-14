@@ -268,7 +268,7 @@ input:focus,select:focus{border-color:var(--accent);}
       <div style="display:flex;gap:14px;align-items:flex-end;justify-content:flex-end">
         <div>
           <div class="solde-label">💳 Nickel</div>
-          <div class="solde-amount positive" id="headerSolde" style="font-size:1.1rem">1,11 &euro;</div>
+          <div class="solde-amount positive" id="headerSolde" style="font-size:1.1rem">62,95 &euro;</div>
         </div>
         <div onclick="editRevolut()" style="cursor:pointer" title="Appuyer pour modifier">
           <div class="solde-label">💛 Revolut ✏️</div>
@@ -694,7 +694,7 @@ function setSens(s) {
 }
 function updateSolde() {
   var uf=ops.filter(function(o){return o.source==='user';}).reduce(function(s,o){return s+o.montant;},0);
-  var d=1.11+uf;
+  var d=62.95+uf;
   var el=document.getElementById('headerSolde');
   el.textContent=d.toFixed(2).replace('.',',')+' €';
   el.className='solde-amount '+(d>=0?'positive':'negative');
@@ -1392,6 +1392,15 @@ function buildRaw() {
   {d:'2026-04-11',l:'Truffaut (Revolut)',m:-29.95,c:'Travaux / Maison',mode:'CB'},
   {d:'2026-04-11',l:'Monceau Fleurs (Revolut)',m:-28.15,c:'Travaux / Maison',mode:'CB'},
   {d:'2026-04-11',l:'Virement vers Florent Francietta',m:-6.00,c:'Virements envoyés',mode:'Virement'},
+  {d:'2026-04-13',l:'Salaire Starsnett Services (mars/avril)',m:1349.23,c:'Salaire / Revenus',mode:'Virement'},
+  {d:'2026-04-13',l:'Loyer ESH Maisons-Alfort',m:-778.38,c:'Logement',mode:'Prelevement'},
+  {d:'2026-04-13',l:'Avocat Me El Sargologo - Maxime Sabangle',m:-250.00,c:'Frais juridiques',mode:'Virement'},
+  {d:'2026-04-13',l:'Navigo Annuel',m:-90.80,c:'Transport',mode:'Prelevement'},
+  {d:'2026-04-13',l:'Virement depuis Revolut',m:50.00,c:'Virements reçus',mode:'Virement'},
+  {d:'2026-04-13',l:'Google Play Apps',m:-22.00,c:'Abonnements',mode:'CB'},
+  {d:'2026-04-14',l:'Bouygues Telecom (ligne 1)',m:-45.99,c:'Téléphonie',mode:'Prelevement'},
+  {d:'2026-04-14',l:'Bouygues Telecom (ligne 2)',m:-47.98,c:'Téléphonie',mode:'Prelevement'},
+  {d:'2026-04-14',l:'Klarna Temu.com',m:-2.24,c:'Courses en ligne',mode:'CB'},
   {d:'2026-05-25',l:'FMA Services - Plomberie complète (espèces)',m:-189.75,c:'Travaux / Maison',mode:'Especes'}
   ];
 }
