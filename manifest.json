@@ -1,19 +1,14 @@
 {
-  "name": "Mon Compte · Ketty",
+  "name": "Mon Compte — Ketty Burel",
   "short_name": "Mon Compte",
-  "description": "Gestion de budget personnalisée",
-  "start_url": "./index.html",
+  "description": "Suivi des comptes Nickel et Revolut",
+  "start_url": "gestion-compte-ketty.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#1a1a2e",
-  "theme_color": "#1a1a2e",
   "orientation": "portrait",
+  "background_color": "#1a2540",
+  "theme_color": "#1a2540",
   "icons": [
-    {
-      "src": "icon.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
     {
       "src": "icon.png",
       "sizes": "512x512",

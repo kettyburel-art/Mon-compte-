@@ -258,6 +258,36 @@ input:focus,select:focus{border-color:var(--accent);}
 </style>
 </head>
 <body>
+
+<!-- v3.1 — Force unregister ancien service worker + clear cache pour appliquer mises à jour -->
+<script>
+(function(){
+  // 1. Désinstaller l'ancien service worker s'il existe
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      regs.forEach(function(r){
+        // Force unregister à chaque chargement pour cette version
+        var swVersionLocal = localStorage.getItem('sw_version_check');
+        if (swVersionLocal !== '2026-05-01-v3') {
+          r.unregister();
+          if (window.caches) {
+            caches.keys().then(function(names){
+              names.forEach(function(n){ caches.delete(n); });
+            });
+          }
+          localStorage.setItem('sw_version_check', '2026-05-01-v3');
+          // Forcer un reload propre une seule fois
+          if (!sessionStorage.getItem('sw_reloaded')) {
+            sessionStorage.setItem('sw_reloaded', '1');
+            setTimeout(function(){ location.reload(true); }, 300);
+          }
+        }
+      });
+    });
+  }
+})();
+</script>
+
 <div class="header">
   <div class="header-left">
     <h1>Mon <span>Compte</span></h1>
@@ -628,7 +658,7 @@ function saveLS() {
 }
 function getLS(k, def) { try { var s=localStorage.getItem(k); return s?JSON.parse(s):def; } catch(e){return def;} }
 // Force reset si ancienne version détectée
-var appVersion = '2026-05-01-v3-soldes-fix';
+var appVersion = '2026-05-01-v4-final';
 if (localStorage.getItem('ketty_version') !== appVersion) {
   localStorage.removeItem('ketty_ops');
   localStorage.removeItem('ketty_budgets');
@@ -1557,6 +1587,36 @@ function loadPlanRecommande() {
 
 
 // ── SOLDE REVOLUT MODIFIABLE ──────────────────
+function resetAllSoldes() {
+  if (!confirm('⚠️ Réinitialiser TOUS les soldes à 0 ?\n\nCette action efface :\n- Solde Nickel\n- Solde Revolut\n- Toutes les opérations saisies manuellement\n\nLes opérations importées (mars, avril) restent.')) return;
+  localStorage.removeItem('ketty_nickel_solde');
+  localStorage.removeItem('ketty_revolut');
+  localStorage.removeItem('ketty_ops');
+  localStorage.removeItem('ketty_budgets');
+  localStorage.removeItem('ketty_enveloppes');
+  localStorage.removeItem('ketty_objectifs');
+  alert('✅ Tout est réinitialisé. La page va recharger.');
+  location.reload(true);
+}
+
+function forceCacheClear() {
+  if (!confirm('🔄 Forcer une mise à jour complète de l\'app ?\n\nCela vide le cache du navigateur et recharge la dernière version depuis GitHub.')) return;
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      regs.forEach(function(r){ r.unregister(); });
+    });
+  }
+  if (window.caches) {
+    caches.keys().then(function(names){
+      names.forEach(function(n){ caches.delete(n); });
+    });
+  }
+  localStorage.removeItem('ketty_version');
+  localStorage.removeItem('sw_version_check');
+  alert('✅ Cache vidé. La page va recharger.');
+  setTimeout(function(){ location.reload(true); }, 500);
+}
+
 function editRevolut() {
   var cur = parseFloat(localStorage.getItem('ketty_revolut') || '0');
   var val = prompt('Solde Revolut actuel (€) :', cur.toFixed(2));
@@ -1797,13 +1857,18 @@ function renderAccueil() {
   html += '<button class="dash-quick-btn" onclick="showPanel(\'ajouter\',null)">➕ Ajouter</button>';
   html += '<button class="dash-quick-btn" onclick="showPanel(\'enveloppes\',null)">📬 Enveloppes</button>';
   html += '<button class="dash-quick-btn" onclick="showPanel(\'alertes\',null)">🔔 Alertes</button>';
+  html += '</div>';
+  html += '<div class="dash-quick-btns" style="margin-top:8px">';
+  html += '<button class="dash-quick-btn" onclick="editNickel()" style="background:rgba(52,152,219,0.25)">💳 Saisir solde Nickel</button>';
+  html += '<button class="dash-quick-btn" onclick="editRevolut()" style="background:rgba(241,196,15,0.25)">💛 Saisir solde Revolut</button>';
+  html += '<button class="dash-quick-btn" onclick="forceCacheClear()" style="background:rgba(155,89,182,0.25);font-size:0.7rem">🔄 Forcer MAJ</button>';
   html += '</div></div>';
 
   // Soldes
   html += '<div class="dash-section-title">💳 Mes soldes</div>';
   html += '<div class="dash-grid">';
-  html += '<div class="dash-card blue"><div class="dash-card-icon">💳</div><div class="dash-card-label">Nickel</div><div class="dash-card-value '+(soldeNickel>=0?'':'')+'">'+soldeNickel.toFixed(2).replace('.',',')+'&nbsp;€</div><div class="dash-card-sub">Compte principal</div></div>';
-  html += '<div class="dash-card gold"><div class="dash-card-icon">💛</div><div class="dash-card-label">Revolut</div><div class="dash-card-value">'+soldeRevolut.toFixed(2).replace('.',',')+'&nbsp;€</div><div class="dash-card-sub">3 pockets actives</div></div>';
+  html += '<div class="dash-card blue" onclick="editNickel()" style="cursor:pointer" title="Appuyer pour modifier"><div class="dash-card-icon">💳</div><div class="dash-card-label">Nickel ✏️</div><div class="dash-card-value '+(soldeNickel>=0?'':'')+'">'+soldeNickel.toFixed(2).replace('.',',')+'&nbsp;€</div><div class="dash-card-sub">Compte principal</div></div>';
+  html += '<div class="dash-card gold" onclick="editRevolut()" style="cursor:pointer" title="Appuyer pour modifier"><div class="dash-card-icon">💛</div><div class="dash-card-label">Revolut ✏️</div><div class="dash-card-value">'+soldeRevolut.toFixed(2).replace('.',',')+'&nbsp;€</div><div class="dash-card-sub">3 pockets actives</div></div>';
   html += '<div class="dash-card '+(soldeTotal>=100?'green':'red')+'"><div class="dash-card-icon">'+(soldeTotal>=100?'💰':'⚠️')+'</div><div class="dash-card-label">Total disponible</div><div class="dash-card-value">'+soldeTotal.toFixed(2).replace('.',',')+'&nbsp;€</div><div class="dash-card-sub">Nickel + Revolut</div></div>';
   html += '<div class="dash-card '+(sCur.solde>=0?'green':'red')+'"><div class="dash-card-icon">'+(sCur.solde>=0?'📈':'📉')+'</div><div class="dash-card-label">Balance mars</div><div class="dash-card-value">'+(sCur.solde>=0?'+':'')+sCur.solde.toFixed(0)+'&nbsp;€</div><div class="dash-card-sub">'+(diffBalance>=0?'▲ +':' ▼ ')+Math.abs(diffBalance).toFixed(0)+'€ vs fév.</div></div>';
   html += '</div>';
