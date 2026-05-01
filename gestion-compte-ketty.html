@@ -266,13 +266,13 @@ input:focus,select:focus{border-color:var(--accent);}
   <div class="header-right">
     <div style="text-align:right">
       <div style="display:flex;gap:14px;align-items:flex-end;justify-content:flex-end">
-        <div>
-          <div class="solde-label">💳 Nickel</div>
-          <div class="solde-amount positive" id="headerSolde" style="font-size:1.1rem">62,95 &euro;</div>
+        <div onclick="editNickel()" style="cursor:pointer" title="Appuyer pour modifier">
+          <div class="solde-label">💳 Nickel ✏️</div>
+          <div class="solde-amount positive" id="headerSolde" style="font-size:1.1rem">0,00 &euro;</div>
         </div>
         <div onclick="editRevolut()" style="cursor:pointer" title="Appuyer pour modifier">
           <div class="solde-label">💛 Revolut ✏️</div>
-          <div class="solde-amount positive" id="headerRevolut" style="font-size:1.1rem">10,970000000000006 &euro;</div>
+          <div class="solde-amount positive" id="headerRevolut" style="font-size:1.1rem">0,00 &euro;</div>
         </div>
       </div>
       <div style="font-size:0.65rem;color:#9090a0;margin-top:3px;text-align:right">Total : <span id="headerTotal">54,77 &euro;</span></div>
@@ -628,11 +628,13 @@ function saveLS() {
 }
 function getLS(k, def) { try { var s=localStorage.getItem(k); return s?JSON.parse(s):def; } catch(e){return def;} }
 // Force reset si ancienne version détectée
-var appVersion = '2026-05-01-v2-comptes';
+var appVersion = '2026-05-01-v3-soldes-fix';
 if (localStorage.getItem('ketty_version') !== appVersion) {
   localStorage.removeItem('ketty_ops');
   localStorage.removeItem('ketty_budgets');
   localStorage.removeItem('ketty_enveloppes');
+  localStorage.removeItem('ketty_revolut');
+  localStorage.removeItem('ketty_nickel_solde');
   localStorage.setItem('ketty_version', appVersion);
 }
 
@@ -707,14 +709,17 @@ function setSens(s) {
   document.getElementById('btnCredit').className='type-btn'+(s==='credit'?' active-credit':'');
 }
 function updateSolde() {
-  var uf=ops.filter(function(o){return o.source==='user';}).reduce(function(s,o){return s+o.montant;},0);
-  var d=62.95+uf;
+  // Solde Nickel : récupéré depuis localStorage (modifiable par l'utilisateur)
+  var soldeNickel=parseFloat(localStorage.getItem('ketty_nickel_solde')||'0');
+  var d=Math.round(soldeNickel*100)/100;
   var el=document.getElementById('headerSolde');
   el.textContent=d.toFixed(2).replace('.',',')+' €';
   el.className='solde-amount '+(d>=0?'positive':'negative');
-  // Revolut solde fixe (mis à jour manuellement)
-  var revolut=40.65;
-  var tot=d+revolut;
+  // Solde Revolut : récupéré depuis localStorage (modifiable)
+  var revolut=Math.round(parseFloat(localStorage.getItem('ketty_revolut')||'0')*100)/100;
+  var elR=document.getElementById('headerRevolut');
+  if(elR) elR.textContent=revolut.toFixed(2).replace('.',',')+' €';
+  var tot=Math.round((d+revolut)*100)/100;
   var elT=document.getElementById('headerTotal');
   if(elT) elT.textContent=tot.toFixed(2).replace('.',',')+' €';
 }
@@ -1553,23 +1558,35 @@ function loadPlanRecommande() {
 
 // ── SOLDE REVOLUT MODIFIABLE ──────────────────
 function editRevolut() {
-  var cur = parseFloat(localStorage.getItem('ketty_revolut') || '10.97');
+  var cur = parseFloat(localStorage.getItem('ketty_revolut') || '0');
   var val = prompt('Solde Revolut actuel (€) :', cur.toFixed(2));
   if (val === null) return;
   var n = parseFloat(val.replace(',','.'));
   if (isNaN(n)) return;
-  localStorage.setItem('ketty_revolut', n.toString());
-  document.getElementById('headerRevolut').textContent = n.toFixed(2).replace('.',',') + ' €';
-  var nickel = parseFloat(document.getElementById('headerSolde').textContent.replace(',','.').replace(' €','')) || 0;
-  var el = document.getElementById('headerTotal');
-  if (el) el.textContent = (nickel + n).toFixed(2).replace('.',',') + ' €';
+  n = Math.round(n*100)/100;
+  localStorage.setItem('ketty_revolut', n.toFixed(2));
+  updateSolde();
+  renderAccueil();
+}
+
+function editNickel() {
+  var cur = parseFloat(localStorage.getItem('ketty_nickel_solde') || '0');
+  var val = prompt('Solde Nickel actuel (€) :', cur.toFixed(2));
+  if (val === null) return;
+  var n = parseFloat(val.replace(',','.'));
+  if (isNaN(n)) return;
+  n = Math.round(n*100)/100;
+  localStorage.setItem('ketty_nickel_solde', n.toFixed(2));
+  updateSolde();
+  renderAccueil();
 }
 
 function loadRevolutSolde() {
   var saved = localStorage.getItem('ketty_revolut');
   if (saved) {
-    var n = parseFloat(saved);
-    document.getElementById('headerRevolut').textContent = n.toFixed(2).replace('.',',') + ' €';
+    var n = Math.round(parseFloat(saved)*100)/100;
+    var el = document.getElementById('headerRevolut');
+    if(el) el.textContent = n.toFixed(2).replace('.',',') + ' €';
   }
 }
 
@@ -1737,8 +1754,8 @@ function renderAccueil() {
   var tauxMois = Math.round((jourActuel / jourMois) * 100);
 
   // Soldes
-  var soldeNickel = parseFloat((document.getElementById('headerSolde').textContent || '0').replace(',','.').replace('€','').trim()) || 15.21;
-  var soldeRevolut = parseFloat(localStorage.getItem('ketty_revolut') || '10.97');
+  var soldeNickel = parseFloat(localStorage.getItem('ketty_nickel_solde')||'0');
+  var soldeRevolut = Math.round(parseFloat(localStorage.getItem('ketty_revolut') || '0')*100)/100;
   var soldeTotal = soldeNickel + soldeRevolut;
 
   // Alertes
