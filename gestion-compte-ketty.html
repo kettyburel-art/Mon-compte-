@@ -494,6 +494,7 @@ input:focus,select:focus{border-color:var(--accent);}
   <div class="tab" onclick="showPanel('export',this)">&#128229; Export PDF</div>
   <div class="tab" onclick="showPanel('charges',this)">&#9881;&#65039; Charges</div>
   <div class="tab" onclick="showPanel('calendrier',this)">&#128197; Calendrier</div>
+  <div class="tab" onclick="showPanel('discipline',this)">&#128170; Discipline</div>
   <div class="tab" onclick="showPanel('backup',this)">&#128190; Backup</div>
 </div>
 
@@ -927,6 +928,17 @@ input:focus,select:focus{border-color:var(--accent);}
       </div>
     </div>
   </div>
+</div>
+
+<div id="panel-discipline" class="panel">
+  <div class="card-box" style="background:linear-gradient(135deg,#3f51b5,#5c6bc0);color:white">
+    <h2 style="margin:0 0 6px;color:white">💪 Discipline financière</h2>
+    <p style="margin:0;font-size:0.82rem;opacity:0.95">
+      Outils pour interrompre les achats impulsifs, mesurer ta progression, et te donner un cadre clair.
+      <br><em style="font-size:0.74rem;opacity:0.85">Pas une punition. Une aide pour mieux respecter tes choix.</em>
+    </p>
+  </div>
+  <div id="disciplineContent"></div>
 </div>
 
 <div id="panel-backup" class="panel">
@@ -3879,6 +3891,332 @@ function renderBackupsList() {
 
 // Lancer le backup auto au démarrage
 setTimeout(autoBackup, 1000);
+
+
+// ── DISCIPLINE FINANCIÈRE ──────────────────────────
+var DISCIPLINE_CONFIG_DEFAULT = {
+  enveloppeMontant: 75,           // Budget mensuel coups de cœur
+  enveloppeCategories: ['Courses en ligne', 'Shopping autres', 'Shopping vêtements'],
+  abstinenceCategories: ['Courses en ligne'],  // Catégories suivies pour le compteur
+  alerteAchatsSemaine: 2,         // Seuil nombre d'achats / semaine
+  alerteMontantMois: 75           // Seuil cumul mensuel
+};
+
+var DISCIPLINE_CONFIG = (function(){
+  var saved = localStorage.getItem('ketty_discipline');
+  if (saved) {
+    try { return Object.assign({}, DISCIPLINE_CONFIG_DEFAULT, JSON.parse(saved)); }
+    catch(e) { return DISCIPLINE_CONFIG_DEFAULT; }
+  }
+  return DISCIPLINE_CONFIG_DEFAULT;
+})();
+
+function saveDisciplineConfig() {
+  localStorage.setItem('ketty_discipline', JSON.stringify(DISCIPLINE_CONFIG));
+}
+
+function getCurrentMonthOps() {
+  var today = new Date();
+  var moisCur = today.toISOString().substring(0,7);
+  return ops.filter(function(o){return o.date.indexOf(moisCur) === 0 && o.montant < 0;});
+}
+
+// ─── 1. ENVELOPPE COUPS DE CŒUR ─────────────────────
+function calcEnveloppe() {
+  var opsMois = getCurrentMonthOps();
+  var depEnveloppe = opsMois.filter(function(o) {
+    return DISCIPLINE_CONFIG.enveloppeCategories.indexOf(o.categorie) >= 0;
+  }).reduce(function(s,o){return s+Math.abs(o.montant);},0);
+  
+  var restant = DISCIPLINE_CONFIG.enveloppeMontant - depEnveloppe;
+  var pct = Math.min(100, Math.round((depEnveloppe / DISCIPLINE_CONFIG.enveloppeMontant) * 100));
+  
+  return {
+    montant: DISCIPLINE_CONFIG.enveloppeMontant,
+    depense: depEnveloppe,
+    restant: restant,
+    pct: pct,
+    nbOps: opsMois.filter(function(o){return DISCIPLINE_CONFIG.enveloppeCategories.indexOf(o.categorie) >= 0;}).length
+  };
+}
+
+// ─── 2. COMPTEUR D'ABSTINENCE ───────────────────────
+function calcAbstinence() {
+  // Trouver la dernière opération dans les catégories surveillées
+  var opsAbst = ops.filter(function(o) {
+    return o.montant < 0 && DISCIPLINE_CONFIG.abstinenceCategories.indexOf(o.categorie) >= 0;
+  }).sort(function(a,b){return b.date.localeCompare(a.date);});
+  
+  if (opsAbst.length === 0) {
+    return {jours: null, derniereOp: null, record: 0, statut: 'jamais'};
+  }
+  
+  var derniere = opsAbst[0];
+  var dateDerniere = new Date(derniere.date);
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  dateDerniere.setHours(0,0,0,0);
+  var jours = Math.floor((today - dateDerniere) / 86400000);
+  
+  // Calcul du record (plus longue série sans achat)
+  var record = 0;
+  if (opsAbst.length > 1) {
+    for (var i = 0; i < opsAbst.length - 1; i++) {
+      var d1 = new Date(opsAbst[i].date);
+      var d2 = new Date(opsAbst[i+1].date);
+      var diff = Math.floor((d1 - d2) / 86400000);
+      if (diff > record) record = diff;
+    }
+  }
+  // La série actuelle peut aussi être un record
+  if (jours > record) record = jours;
+  
+  return {
+    jours: jours,
+    derniereOp: derniere,
+    record: record,
+    statut: jours === 0 ? 'aujourdhui' : (jours <= 3 ? 'recent' : (jours <= 14 ? 'progres' : 'champion'))
+  };
+}
+
+// ─── 3. ALERTE PATTERN ──────────────────────────────
+function calcPatternRisque() {
+  var today = new Date();
+  var il7j = new Date(today);
+  il7j.setDate(today.getDate() - 7);
+  var moisCur = today.toISOString().substring(0,7);
+  
+  // Achats catégories surveillées sur 7 derniers jours
+  var achatsRecents = ops.filter(function(o) {
+    if (o.montant >= 0) return false;
+    if (DISCIPLINE_CONFIG.abstinenceCategories.indexOf(o.categorie) < 0) return false;
+    var d = new Date(o.date);
+    return d >= il7j && d <= today;
+  });
+  
+  // Cumul du mois
+  var cumulMois = ops.filter(function(o) {
+    if (o.montant >= 0) return false;
+    if (DISCIPLINE_CONFIG.abstinenceCategories.indexOf(o.categorie) < 0) return false;
+    return o.date.indexOf(moisCur) === 0;
+  }).reduce(function(s,o){return s+Math.abs(o.montant);},0);
+  
+  var seuilSemaineAtteint = achatsRecents.length >= DISCIPLINE_CONFIG.alerteAchatsSemaine;
+  var seuilMontantAtteint = cumulMois >= DISCIPLINE_CONFIG.alerteMontantMois;
+  
+  return {
+    achats7j: achatsRecents.length,
+    cumulMois: cumulMois,
+    seuilSemaineAtteint: seuilSemaineAtteint,
+    seuilMontantAtteint: seuilMontantAtteint,
+    enAlerte: seuilSemaineAtteint || seuilMontantAtteint,
+    seuilSemaineMax: DISCIPLINE_CONFIG.alerteAchatsSemaine,
+    seuilMontantMax: DISCIPLINE_CONFIG.alerteMontantMois
+  };
+}
+
+// ─── RENDU PANEL DISCIPLINE ─────────────────────────
+function renderPanelDiscipline() {
+  var env = calcEnveloppe();
+  var abs = calcAbstinence();
+  var pat = calcPatternRisque();
+  
+  var html = '';
+  
+  // === BLOC 1 : ENVELOPPE COUPS DE CŒUR ===
+  var envColor = env.restant > 30 ? '#27ae60' : (env.restant > 0 ? '#f39c12' : '#e74c3c');
+  var envBg = env.restant > 30 ? '#d4edda' : (env.restant > 0 ? '#fff3cd' : '#f8d7da');
+  
+  html += '<div class="card-box" style="background:' + envBg + ';border-left:4px solid ' + envColor + '">';
+  html += '<h2 style="margin:0 0 6px;color:' + envColor + '">💝 Enveloppe Coups de cœur</h2>';
+  html += '<p style="margin:0 0 12px;font-size:0.78rem;color:#555">Budget mensuel pour Klarna, Temu, Amazon, vêtements... Quand l\'enveloppe est vide, c\'est vide.</p>';
+  
+  // Barre de progression
+  html += '<div style="position:relative;background:rgba(0,0,0,0.08);height:24px;border-radius:12px;overflow:hidden;margin-bottom:8px">';
+  html += '<div style="position:absolute;left:0;top:0;height:100%;width:' + env.pct + '%;background:' + envColor + ';transition:width 0.3s"></div>';
+  html += '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;color:#1a2540;mix-blend-mode:multiply">' + env.pct + '%</div>';
+  html += '</div>';
+  
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;text-align:center">';
+  html += '<div><div style="font-size:0.65rem;color:#666;text-transform:uppercase">Dépensé</div><div style="font-weight:700;color:' + envColor + '">' + env.depense.toFixed(2).replace('.',',') + '€</div></div>';
+  html += '<div><div style="font-size:0.65rem;color:#666;text-transform:uppercase">Restant</div><div style="font-weight:700;color:' + envColor + '">' + env.restant.toFixed(2).replace('.',',') + '€</div></div>';
+  html += '<div><div style="font-size:0.65rem;color:#666;text-transform:uppercase">Limite</div><div style="font-weight:700;color:#1a2540">' + env.montant + '€</div></div>';
+  html += '</div>';
+  
+  if (env.restant <= 0) {
+    html += '<div style="margin-top:10px;padding:8px;background:rgba(231,76,60,0.15);border-radius:6px;font-size:0.78rem;color:#c0392b;font-weight:600;text-align:center">';
+    html += '⛔ Enveloppe épuisée. Plus d\'achats coups de cœur ce mois-ci.';
+    html += '</div>';
+  } else if (env.restant < 20) {
+    html += '<div style="margin-top:10px;padding:8px;background:rgba(243,156,18,0.15);border-radius:6px;font-size:0.78rem;color:#d68910;font-weight:600;text-align:center">';
+    html += '⚠️ Plus que ' + env.restant.toFixed(2).replace('.',',') + '€ restant';
+    html += '</div>';
+  }
+  
+  html += '<div style="margin-top:10px;text-align:center"><button onclick="editEnveloppeMontant()" style="background:none;border:1px solid ' + envColor + ';color:' + envColor + ';padding:5px 12px;border-radius:6px;font-size:0.72rem;cursor:pointer">⚙️ Modifier le montant</button></div>';
+  html += '</div>';
+  
+  // === BLOC 2 : COMPTEUR D'ABSTINENCE ===
+  var absColor, absBg, absMessage, absEmoji;
+  if (abs.statut === 'jamais') {
+    absColor = '#27ae60'; absBg = '#d4edda'; absMessage = 'Aucun achat dans les catégories surveillées'; absEmoji = '🌟';
+  } else if (abs.statut === 'aujourdhui') {
+    absColor = '#e74c3c'; absBg = '#f8d7da'; absMessage = 'Tu as craqué aujourd\'hui. C\'est OK, demain est un nouveau jour.'; absEmoji = '🔄';
+  } else if (abs.statut === 'recent') {
+    absColor = '#f39c12'; absBg = '#fff3cd'; absMessage = 'Début prometteur, continue !'; absEmoji = '🌱';
+  } else if (abs.statut === 'progres') {
+    absColor = '#3498db'; absBg = '#d4e6f1'; absMessage = 'Belle progression !'; absEmoji = '💪';
+  } else {
+    absColor = '#27ae60'; absBg = '#d4edda'; absMessage = 'Excellente discipline !'; absEmoji = '🏆';
+  }
+  
+  html += '<div class="card-box" style="background:' + absBg + ';border-left:4px solid ' + absColor + ';margin-top:10px">';
+  html += '<h2 style="margin:0 0 6px;color:' + absColor + '">' + absEmoji + ' Compteur d\'abstinence</h2>';
+  html += '<p style="margin:0 0 12px;font-size:0.78rem;color:#555">Jours sans achat dans : ' + DISCIPLINE_CONFIG.abstinenceCategories.join(', ') + '</p>';
+  
+  html += '<div style="display:flex;gap:14px;align-items:center;justify-content:center;padding:14px;background:white;border-radius:10px">';
+  html += '<div style="text-align:center;flex:1">';
+  if (abs.jours === null) {
+    html += '<div style="font-size:2rem;font-weight:800;color:' + absColor + '">∞</div>';
+    html += '<div style="font-size:0.7rem;color:#666;text-transform:uppercase;margin-top:2px">Jours</div>';
+  } else {
+    html += '<div style="font-size:2.2rem;font-weight:800;color:' + absColor + ';line-height:1">' + abs.jours + '</div>';
+    html += '<div style="font-size:0.7rem;color:#666;text-transform:uppercase;margin-top:2px">jour' + (abs.jours > 1 ? 's' : '') + ' sans craquer</div>';
+  }
+  html += '</div>';
+  if (abs.record > 0 && abs.record !== abs.jours) {
+    html += '<div style="border-left:1.5px solid rgba(0,0,0,0.1);padding-left:14px;text-align:center;flex:1">';
+    html += '<div style="font-size:1.4rem;font-weight:700;color:#666">' + abs.record + '</div>';
+    html += '<div style="font-size:0.65rem;color:#888;text-transform:uppercase;margin-top:2px">Record 🏅</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+  
+  html += '<div style="margin-top:10px;font-size:0.82rem;color:' + absColor + ';font-weight:600;text-align:center">' + absMessage + '</div>';
+  
+  if (abs.derniereOp) {
+    html += '<div style="margin-top:8px;font-size:0.7rem;color:#888;text-align:center">';
+    html += 'Dernier achat : ' + abs.derniereOp.libelle.substring(0,30) + ' · ' + Math.abs(abs.derniereOp.montant).toFixed(2).replace('.',',') + '€ le ' + abs.derniereOp.date.split('-').reverse().join('/');
+    html += '</div>';
+  }
+  html += '</div>';
+  
+  // === BLOC 3 : ALERTE PATTERN ===
+  if (pat.enAlerte) {
+    html += '<div class="card-box" style="background:#f8d7da;border-left:4px solid #c0392b;margin-top:10px">';
+    html += '<h2 style="margin:0 0 6px;color:#c0392b">🚨 Alerte comportementale</h2>';
+    if (pat.seuilSemaineAtteint) {
+      html += '<p style="margin:6px 0;font-size:0.85rem;color:#721c24"><strong>' + pat.achats7j + ' achat(s) en 7 jours</strong> dans les catégories à risque (seuil : ' + pat.seuilSemaineMax + ').</p>';
+    }
+    if (pat.seuilMontantAtteint) {
+      html += '<p style="margin:6px 0;font-size:0.85rem;color:#721c24"><strong>' + pat.cumulMois.toFixed(2).replace('.',',') + '€ ce mois-ci</strong> (seuil : ' + pat.seuilMontantMax + '€).</p>';
+    }
+    html += '<p style="margin:8px 0 0;font-size:0.78rem;color:#721c24;font-style:italic">Pose-toi la question : qu\'est-ce qui déclenche ces achats en ce moment ? Stress, ennui, fatigue ?</p>';
+    html += '</div>';
+  } else {
+    html += '<div class="card-box" style="background:#d4edda;border-left:4px solid #27ae60;margin-top:10px">';
+    html += '<h2 style="margin:0 0 6px;color:#27ae60">✅ Comportement maîtrisé</h2>';
+    html += '<p style="margin:0;font-size:0.82rem;color:#155724">' + pat.achats7j + ' achat(s) sur 7j (seuil ' + pat.seuilSemaineMax + ') · ' + pat.cumulMois.toFixed(0) + '€ ce mois (seuil ' + pat.seuilMontantMax + '€)</p>';
+    html += '</div>';
+  }
+  
+  // === BLOC 4 : OUTIL "AVANT D'ACHETER" ===
+  html += '<div class="card-box" style="background:#e8eaf6;border-left:4px solid #3f51b5;margin-top:10px">';
+  html += '<h2 style="margin:0 0 6px;color:#3f51b5">🛑 Avant d\'acheter</h2>';
+  html += '<p style="margin:0 0 10px;font-size:0.78rem;color:#555">Tape le montant que tu envisages avant de cliquer "Payer". L\'app te montre l\'impact réel.</p>';
+  html += '<div style="display:flex;gap:6px;align-items:center">';
+  html += '<input type="number" id="avantAchatMontant" placeholder="Montant en €" step="0.01" style="flex:1;padding:10px;font-size:0.95rem;border:1.5px solid #3f51b5;border-radius:8px" inputmode="decimal">';
+  html += '<button onclick="simulerAvantAchat()" style="padding:10px 14px;background:#3f51b5;color:white;border:none;border-radius:8px;font-weight:600;font-size:0.85rem;cursor:pointer">Vérifier</button>';
+  html += '</div>';
+  html += '<div id="avantAchatResult" style="margin-top:10px"></div>';
+  html += '</div>';
+  
+  return html;
+}
+
+function simulerAvantAchat() {
+  var montant = parseFloat(document.getElementById('avantAchatMontant').value);
+  var el = document.getElementById('avantAchatResult');
+  if (isNaN(montant) || montant <= 0) {
+    el.innerHTML = '<p style="color:#e74c3c;font-size:0.78rem">Entre un montant valide.</p>';
+    return;
+  }
+  
+  var env = calcEnveloppe();
+  var soldeNickel = parseFloat(localStorage.getItem('ketty_nickel_solde') || '0');
+  
+  // Charges restantes ce mois (prélèvements auto seulement)
+  var today = new Date();
+  var jourCur = today.getDate();
+  var chargesRestantes = CHARGES.filter(function(c){
+    return c.actif !== false && c.type !== 'virement' && (c.compte||'nickel')==='nickel' && c.jour > jourCur;
+  }).reduce(function(s,c){return s+c.montant;},0);
+  
+  var soldeApres = soldeNickel - montant;
+  var soldeFinMois = soldeApres - chargesRestantes;
+  
+  var html = '<div style="background:white;padding:12px;border-radius:8px">';
+  
+  // Impact enveloppe
+  var nouveauRestant = env.restant - montant;
+  if (nouveauRestant < 0) {
+    html += '<div style="padding:8px;background:#f8d7da;border-radius:6px;margin-bottom:8px;font-size:0.82rem;color:#721c24">';
+    html += '⛔ <strong>Dépasse l\'enveloppe de ' + Math.abs(nouveauRestant).toFixed(2).replace('.',',') + '€</strong>';
+    html += '</div>';
+  } else if (nouveauRestant < 20) {
+    html += '<div style="padding:8px;background:#fff3cd;border-radius:6px;margin-bottom:8px;font-size:0.82rem;color:#856404">';
+    html += '⚠️ Il ne resterait que <strong>' + nouveauRestant.toFixed(2).replace('.',',') + '€</strong> dans l\'enveloppe';
+    html += '</div>';
+  } else {
+    html += '<div style="padding:8px;background:#d4edda;border-radius:6px;margin-bottom:8px;font-size:0.82rem;color:#155724">';
+    html += '✓ Enveloppe : reste <strong>' + nouveauRestant.toFixed(2).replace('.',',') + '€</strong> après';
+    html += '</div>';
+  }
+  
+  // Impact solde
+  html += '<div style="font-size:0.78rem;line-height:1.6;color:#333">';
+  html += '<div>Solde Nickel actuel : <strong>' + soldeNickel.toFixed(2).replace('.',',') + '€</strong></div>';
+  html += '<div>Solde après cet achat : <strong>' + soldeApres.toFixed(2).replace('.',',') + '€</strong></div>';
+  html += '<div>Charges restantes du mois : <strong>-' + chargesRestantes.toFixed(2).replace('.',',') + '€</strong></div>';
+  html += '<div style="margin-top:6px;padding-top:6px;border-top:1px solid #eee">Solde projeté fin de mois : <strong style="color:' + (soldeFinMois>=0?'#27ae60':'#c0392b') + ';font-size:1rem">' + soldeFinMois.toFixed(2).replace('.',',') + '€</strong></div>';
+  html += '</div>';
+  
+  // Compteur abstinence
+  var abs = calcAbstinence();
+  if (abs.jours !== null && abs.jours > 0) {
+    html += '<div style="margin-top:10px;padding:8px;background:#fff3cd;border-radius:6px;font-size:0.78rem;color:#856404;text-align:center">';
+    html += '🌱 Tu es à <strong>' + abs.jours + ' jour' + (abs.jours>1?'s':'') + '</strong> sans craquer. Cet achat remettrait le compteur à zéro.';
+    html += '</div>';
+  }
+  
+  // Recommandation finale
+  html += '<div style="margin-top:12px;padding:10px;background:#1a2540;color:white;border-radius:8px;text-align:center">';
+  if (soldeFinMois < 0 || nouveauRestant < 0) {
+    html += '<div style="font-size:0.95rem;font-weight:700">🛑 À éviter</div>';
+    html += '<div style="font-size:0.74rem;margin-top:3px;opacity:0.85">Cet achat compromet ta fin de mois ou ton enveloppe.</div>';
+  } else if (soldeFinMois < 50 || nouveauRestant < 20) {
+    html += '<div style="font-size:0.95rem;font-weight:700">⚠️ Risqué</div>';
+    html += '<div style="font-size:0.74rem;margin-top:3px;opacity:0.85">C\'est limite. Demande-toi si c\'est vraiment indispensable maintenant.</div>';
+  } else {
+    html += '<div style="font-size:0.95rem;font-weight:700">✓ Acceptable</div>';
+    html += '<div style="font-size:0.74rem;margin-top:3px;opacity:0.85">Mais reste honnête : en as-tu vraiment besoin ?</div>';
+  }
+  html += '</div>';
+  
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function editEnveloppeMontant() {
+  var nouveau = parseFloat((prompt('Montant de l\'enveloppe coups de cœur (€) :', DISCIPLINE_CONFIG.enveloppeMontant) || '').replace(',','.'));
+  if (isNaN(nouveau) || nouveau <= 0) return;
+  DISCIPLINE_CONFIG.enveloppeMontant = Math.round(nouveau*100)/100;
+  saveDisciplineConfig();
+  renderPanelDiscipline();
+  // Re-render le panel actif
+  var el = document.getElementById('disciplineContent');
+  if (el) el.innerHTML = renderPanelDiscipline();
+}
 
 </script>
 
