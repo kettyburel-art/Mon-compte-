@@ -384,6 +384,7 @@ input:focus,select:focus{border-color:var(--accent);}
   <div class="tab" onclick="showPanel('graphique',this)">&#128200; Graph.</div>
   <div class="tab" onclick="showPanel('objectif',this)">&#127919; Obj.</div>
   <div class="tab" onclick="showPanel('ajouter',this)">&#10133; Ajout</div>
+  <div class="tab" onclick="showPanel('import',this)">&#128194; Import</div>
 </div>
 
 <div class="main">
@@ -659,6 +660,52 @@ input:focus,select:focus{border-color:var(--accent);}
   </div>
 </div>
 
+<div id="panel-import" class="panel">
+  <div class="card-box">
+    <h2>📂 Import CSV / Coller</h2>
+    <p style="font-size:0.78rem;color:var(--muted);margin:0 0 12px">
+      Importe automatiquement tes opérations depuis un export CSV Nickel ou Revolut, 
+      ou en collant le contenu d'un relevé.
+    </p>
+    
+    <div class="form-row">
+      <div>
+        <label>Compte cible *</label>
+        <select id="impCompte">
+          <option value="nickel">💳 Nickel</option>
+          <option value="revolut">💛 Revolut</option>
+        </select>
+      </div>
+      <div>
+        <label>Source</label>
+        <select id="impSource">
+          <option value="auto">Détection auto</option>
+          <option value="nickel">Nickel (CSV)</option>
+          <option value="revolut">Revolut (CSV)</option>
+          <option value="generic">Générique</option>
+        </select>
+      </div>
+    </div>
+    
+    <div style="margin:12px 0">
+      <label>Charger un fichier CSV</label>
+      <input type="file" id="impFile" accept=".csv,.txt" onchange="onFileSelected(event)" 
+             style="width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:8px;background:var(--bg-light)">
+    </div>
+    
+    <div style="margin:12px 0">
+      <label>Ou colle ici le contenu CSV</label>
+      <textarea id="impTextarea" rows="6" 
+                placeholder="Date;Libellé;Débit;Crédit&#10;01/04/2026;Franprix;-12,45;&#10;..."
+                style="width:100%;padding:10px;border:1.5px solid var(--border);border-radius:8px;font-family:monospace;font-size:0.75rem"></textarea>
+    </div>
+    
+    <button class="submit-btn" onclick="parseAndPreview()">🔍 Analyser</button>
+    
+    <div id="impPreview" style="margin-top:16px"></div>
+  </div>
+</div>
+
 </div>
 <div class="save-indicator" id="saveIndicator">Sauvegard&eacute; &#10003;</div>
 
@@ -718,7 +765,7 @@ function saveLS() {
 }
 function getLS(k, def) { try { var s=localStorage.getItem(k); return s?JSON.parse(s):def; } catch(e){return def;} }
 // Force reset si ancienne version détectée
-var appVersion = '2026-05-01-v5-saisie-rapide';
+var appVersion = '2026-05-01-v6-import-csv';
 if (localStorage.getItem('ketty_version') !== appVersion) {
   // On efface seulement les ops/budgets pour appliquer les nouvelles données
   // MAIS on conserve les soldes saisis par l'utilisateur (Nickel, Revolut)
@@ -2133,6 +2180,301 @@ function saveQuickAdd() {
   checkAlertes();
   showSave();
   closeQuickAdd();
+}
+
+
+// ── IMPORT CSV ──────────────────────────────────────
+var pendingImport = null; // Stocke les ops parsées avant validation
+
+function onFileSelected(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    document.getElementById('impTextarea').value = e.target.result;
+    parseAndPreview();
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function detectSeparator(text) {
+  // Compter les occurrences sur les premières lignes pour deviner le séparateur
+  var lines = text.split('\n').slice(0, 5).join('\n');
+  var counts = {
+    ';': (lines.match(/;/g)||[]).length,
+    ',': (lines.match(/,/g)||[]).length,
+    '\t': (lines.match(/\t/g)||[]).length
+  };
+  var max = 0, sep = ';';
+  for (var k in counts) { if (counts[k] > max) { max = counts[k]; sep = k; } }
+  return sep;
+}
+
+function parseCSV(text, sep) {
+  // Parser CSV simple, gère les guillemets
+  var lines = text.split(/\r?\n/).filter(function(l){return l.trim().length>0;});
+  var rows = [];
+  lines.forEach(function(line) {
+    var row = [];
+    var current = '';
+    var inQuote = false;
+    for (var i = 0; i < line.length; i++) {
+      var c = line[i];
+      if (c === '"') { inQuote = !inQuote; continue; }
+      if (c === sep && !inQuote) {
+        row.push(current.trim());
+        current = '';
+      } else {
+        current += c;
+      }
+    }
+    row.push(current.trim());
+    rows.push(row);
+  });
+  return rows;
+}
+
+function detectColumns(headers) {
+  // Mapper les headers aux types attendus
+  var map = { date: -1, libelle: -1, debit: -1, credit: -1, montant: -1, mode: -1 };
+  headers.forEach(function(h, i) {
+    var hl = h.toLowerCase().replace(/\s/g,'').replace(/[éèê]/g,'e').replace(/['_-]/g,'');
+    if (hl.indexOf('date') >= 0 && map.date < 0) map.date = i;
+    else if (hl.indexOf('libelle') >= 0 || hl.indexOf('description') >= 0 || hl.indexOf('intitule') >= 0 || hl === 'designation') map.libelle = i;
+    else if (hl === 'debit' || hl === 'depense') map.debit = i;
+    else if (hl === 'credit' || hl === 'recette') map.credit = i;
+    else if (hl === 'montant' || hl === 'amount') map.montant = i;
+    else if (hl.indexOf('mode') >= 0 || hl === 'type') map.mode = i;
+  });
+  return map;
+}
+
+function parseFrenchDate(s) {
+  // Essayer différents formats : DD/MM/YYYY, YYYY-MM-DD, DD-MM-YYYY
+  s = s.trim();
+  var m;
+  if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/))) {
+    return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
+  }
+  if ((m = s.match(/^(\d{4})-(\d{2})-(\d{2})/))) {
+    return m[1] + '-' + m[2] + '-' + m[3];
+  }
+  if ((m = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})/))) {
+    return m[3] + '-' + m[2].padStart(2,'0') + '-' + m[1].padStart(2,'0');
+  }
+  return null;
+}
+
+function parseAmount(s) {
+  if (!s) return 0;
+  s = s.toString().trim()
+       .replace(/\s/g, '')
+       .replace(/€/g, '')
+       .replace(/EUR/g, '');
+  // Format français : virgule décimale, point milliers
+  if (s.indexOf(',') >= 0 && s.indexOf('.') < s.indexOf(',')) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  } else {
+    s = s.replace(',', '.');
+  }
+  var n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
+function autoCategorize(libelle) {
+  var l = libelle.toLowerCase();
+  if (/franprix|carrefour|auchan|monoprix|biocoop|miettes|riquet|eau vive|delices|sevra|leclerc/.test(l)) return 'Alimentation';
+  if (/condorcet|bonne fortune|tabac|presse|echat/.test(l)) return 'Tabac / Presse';
+  if (/uber|deliveroo|just eat|arina|sesame|restaurant|pizza/.test(l)) return 'Restauration / Livraison';
+  if (/klarna|temu|amazon|cdiscount|aliexpress|paypal/.test(l)) return 'Courses en ligne';
+  if (/ratp|navigo|sncf|bolt|uber\b|metro|bus/.test(l)) return 'Transport';
+  if (/loyer|esh|maison.alfor|hlm/.test(l)) return 'Logement';
+  if (/bouygues|orange|free|sfr/.test(l)) return 'Téléphonie';
+  if (/netflix|prime|spotify|audible|abonnement|chatgpt|google play/.test(l)) return 'Abonnements';
+  if (/acheel|mutuelle|pharmacie|medecin/.test(l)) return 'Santé / Bien-être';
+  if (/truffaut|monceau|fleur|maxi zoo|brico/.test(l)) return 'Travaux / Maison';
+  if (/zoo|veto|animal/.test(l)) return 'Animaux / Sam';
+  if (/avocat|sargologo|huissier|tribunal/.test(l)) return 'Frais juridiques';
+  if (/salaire|starsnett/.test(l)) return 'Salaire / Revenus';
+  if (/caf/.test(l)) return 'CAF / Aides';
+  if (/retrait|dab/.test(l)) return 'Retraits';
+  if (/virement.*recu|virement reçu/.test(l)) return 'Virements reçus';
+  if (/virement|envoi/.test(l)) return 'Virements envoyés';
+  if (/rejet|frais/.test(l)) return 'Incidents bancaires';
+  return 'Divers';
+}
+
+function detectMode(libelle, montant) {
+  var l = libelle.toLowerCase();
+  if (/virement/.test(l)) return 'Virement';
+  if (/prelev|prélèv/.test(l)) return 'Prelevement';
+  if (/retrait|dab|especes|espèces/.test(l)) return 'Especes';
+  return 'CB';
+}
+
+function parseAndPreview() {
+  var text = document.getElementById('impTextarea').value.trim();
+  if (!text) {
+    alert('Aucune donnée à analyser. Charge un fichier CSV ou colle son contenu.');
+    return;
+  }
+  
+  var compteCible = document.getElementById('impCompte').value;
+  var sep = detectSeparator(text);
+  var rows = parseCSV(text, sep);
+  
+  if (rows.length < 2) {
+    alert('Le contenu ne contient pas assez de lignes (min. 1 en-tête + 1 opération).');
+    return;
+  }
+  
+  // Détecter les colonnes depuis la 1ère ligne
+  var headers = rows[0];
+  var cols = detectColumns(headers);
+  var hasHeader = (cols.date >= 0 && (cols.libelle >= 0));
+  var dataRows = hasHeader ? rows.slice(1) : rows;
+  
+  // Si pas de header détecté, demander à l'utilisateur ou deviner
+  if (!hasHeader) {
+    // Tentative : si 4 colonnes typiques Date | Libellé | Débit | Crédit
+    if (rows[0].length >= 3) {
+      cols.date = 0; cols.libelle = 1;
+      if (rows[0].length === 3) cols.montant = 2;
+      else { cols.debit = 2; cols.credit = 3; }
+    }
+  }
+  
+  // Parser chaque ligne
+  var parsed = [];
+  var errors = [];
+  dataRows.forEach(function(row, i) {
+    if (row.length < 2) return;
+    var date = cols.date >= 0 ? parseFrenchDate(row[cols.date]) : null;
+    var libelle = cols.libelle >= 0 ? row[cols.libelle] : '';
+    if (!date || !libelle) {
+      errors.push('Ligne ' + (i+2) + ' : date ou libellé manquant');
+      return;
+    }
+    var montant = 0;
+    if (cols.montant >= 0) {
+      montant = parseAmount(row[cols.montant]);
+    } else {
+      var debit = cols.debit >= 0 ? parseAmount(row[cols.debit]) : 0;
+      var credit = cols.credit >= 0 ? parseAmount(row[cols.credit]) : 0;
+      montant = credit - Math.abs(debit);
+    }
+    if (montant === 0) return; // skip lignes nulles
+    
+    parsed.push({
+      date: date,
+      libelle: libelle.replace(/^"|"$/g, ''),
+      montant: Math.round(montant*100)/100,
+      categorie: autoCategorize(libelle),
+      mode: detectMode(libelle, montant),
+      compte: compteCible,
+      sens: montant < 0 ? 'debit' : 'credit',
+      source: 'import-csv',
+      note: ''
+    });
+  });
+  
+  // Détecter doublons avec ops existantes
+  var existingKeys = new Set();
+  ops.forEach(function(o) {
+    existingKeys.add(o.date + '|' + o.libelle.toLowerCase().substring(0,30) + '|' + o.montant.toFixed(2));
+  });
+  
+  parsed.forEach(function(p) {
+    var key = p.date + '|' + p.libelle.toLowerCase().substring(0,30) + '|' + p.montant.toFixed(2);
+    p.isDuplicate = existingKeys.has(key);
+  });
+  
+  pendingImport = parsed;
+  
+  // Afficher la preview
+  var newOps = parsed.filter(function(p){return !p.isDuplicate;});
+  var dupes = parsed.filter(function(p){return p.isDuplicate;});
+  
+  var html = '<div class="card-box" style="background:#fffbe6;border:1px solid #ffe58f">';
+  html += '<h3 style="margin:0 0 8px;font-size:0.95rem">📊 Aperçu de l\'import</h3>';
+  html += '<p style="margin:0 0 4px;font-size:0.8rem"><strong>' + parsed.length + ' opérations détectées</strong> sur ' + dataRows.length + ' lignes.</p>';
+  html += '<p style="margin:0 0 4px;font-size:0.8rem;color:#27ae60">✓ ' + newOps.length + ' nouvelles à importer</p>';
+  if (dupes.length > 0) {
+    html += '<p style="margin:0 0 4px;font-size:0.8rem;color:#e67e22">⚠ ' + dupes.length + ' doublons (déjà présents, seront ignorés)</p>';
+  }
+  if (errors.length > 0) {
+    html += '<p style="margin:0 0 4px;font-size:0.78rem;color:#e74c3c">' + errors.length + ' erreurs : ' + errors.slice(0,3).join('; ') + '</p>';
+  }
+  html += '</div>';
+  
+  // Tableau preview (max 20 lignes)
+  html += '<div style="overflow-x:auto;margin-top:10px">';
+  html += '<table style="width:100%;font-size:0.72rem;border-collapse:collapse">';
+  html += '<thead><tr style="background:var(--bg-light)"><th style="padding:6px;text-align:left">Date</th><th style="padding:6px;text-align:left">Libellé</th><th style="padding:6px;text-align:right">Montant</th><th style="padding:6px">Catég.</th><th style="padding:6px">Statut</th></tr></thead><tbody>';
+  parsed.slice(0, 30).forEach(function(p) {
+    var statut = p.isDuplicate ? '<span style="color:#e67e22">Doublon</span>' : '<span style="color:#27ae60">Nouveau</span>';
+    var rowStyle = p.isDuplicate ? 'opacity:0.55' : '';
+    html += '<tr style="border-bottom:1px solid var(--border);' + rowStyle + '">';
+    html += '<td style="padding:5px">' + p.date.split('-').reverse().join('/') + '</td>';
+    html += '<td style="padding:5px">' + p.libelle.substring(0,35) + '</td>';
+    html += '<td style="padding:5px;text-align:right;font-family:monospace;color:' + (p.montant>=0?'#27ae60':'#e74c3c') + '">' + p.montant.toFixed(2).replace('.',',') + '€</td>';
+    html += '<td style="padding:5px;font-size:0.65rem">' + p.categorie + '</td>';
+    html += '<td style="padding:5px;font-size:0.65rem">' + statut + '</td>';
+    html += '</tr>';
+  });
+  if (parsed.length > 30) {
+    html += '<tr><td colspan="5" style="padding:6px;text-align:center;color:var(--muted)">... +' + (parsed.length-30) + ' autres lignes</td></tr>';
+  }
+  html += '</tbody></table></div>';
+  
+  if (newOps.length > 0) {
+    html += '<button class="submit-btn" style="margin-top:12px;background:linear-gradient(135deg,#27ae60,#229954)" onclick="confirmImport()">✓ Importer ' + newOps.length + ' opération(s)</button>';
+  } else {
+    html += '<p style="text-align:center;margin-top:12px;color:var(--muted);font-size:0.8rem">Aucune nouvelle opération à importer.</p>';
+  }
+  html += ' <button class="submit-btn" style="background:#95a5a6;margin-top:6px" onclick="document.getElementById(\'impPreview\').innerHTML=\'\';pendingImport=null;">Annuler</button>';
+  
+  document.getElementById('impPreview').innerHTML = html;
+}
+
+function confirmImport() {
+  if (!pendingImport) return;
+  var newOps = pendingImport.filter(function(p){return !p.isDuplicate;});
+  if (newOps.length === 0) return;
+  
+  // Ajouter les ops avec un id unique
+  newOps.forEach(function(p) {
+    var op = {
+      id: nextId++,
+      date: p.date,
+      libelle: p.libelle,
+      montant: p.montant,
+      categorie: p.categorie,
+      mode: p.mode,
+      compte: p.compte,
+      note: 'Import CSV',
+      source: 'user', // user pour pouvoir supprimer
+      sens: p.sens
+    };
+    ops.push(op);
+  });
+  
+  saveLS();
+  populateCatFilter();
+  renderStats();
+  updateSolde();
+  if (document.querySelector('#panel-accueil.active')) renderAccueil();
+  
+  alert('✅ ' + newOps.length + ' opération(s) importée(s) avec succès !');
+  
+  // Reset
+  document.getElementById('impTextarea').value = '';
+  document.getElementById('impFile').value = '';
+  document.getElementById('impPreview').innerHTML = '';
+  pendingImport = null;
+  
+  // Aller voir les opérations
+  showPanel('operations', null);
 }
 
 </script>
