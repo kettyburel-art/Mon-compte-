@@ -315,6 +315,112 @@ input:focus,select:focus{border-color:var(--accent);}
 .qmodal-save { background: linear-gradient(135deg, #27ae60, #229954); color: white; }
 .qmodal-save:active { transform: scale(0.97); }
 
+
+/* === CALENDRIER === */
+.cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 3px; margin-bottom: 4px;
+}
+.cal-header {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 3px; margin-bottom: 6px;
+}
+.cal-day-name {
+  text-align: center; font-size: 0.65rem;
+  font-weight: 700; color: var(--muted);
+  text-transform: uppercase; padding: 4px 0;
+}
+.cal-cell {
+  aspect-ratio: 1;
+  background: white; border: 1.5px solid var(--border);
+  border-radius: 8px; padding: 4px 3px;
+  font-size: 0.7rem; cursor: pointer;
+  position: relative; overflow: hidden;
+  transition: transform 0.1s, box-shadow 0.15s;
+  display: flex; flex-direction: column;
+}
+.cal-cell:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.1); transform: scale(1.04); }
+.cal-cell.empty { background: transparent; border: none; cursor: default; }
+.cal-cell.empty:hover { transform: none; box-shadow: none; }
+.cal-cell.today { border-color: var(--primary); border-width: 2.5px; box-shadow: 0 0 0 2px rgba(224,122,58,0.2); }
+.cal-cell.selected { background: linear-gradient(135deg, #fff8f3, #ffe8d6); border-color: var(--primary); }
+.cal-cell.solde-neg { background: #ffe8e8; border-color: #e74c3c; }
+.cal-cell.solde-warn { background: #fff8e1; border-color: #f39c12; }
+.cal-cell.solde-ok { background: #f1f9f1; }
+.cal-cell .cal-num { font-weight: 700; font-size: 0.78rem; color: var(--dark); }
+.cal-cell .cal-icons { display: flex; gap: 2px; flex-wrap: wrap; margin-top: auto; font-size: 0.6rem; }
+.cal-cell .cal-icon-pill {
+  background: rgba(0,0,0,0.08); border-radius: 6px;
+  padding: 1px 3px; font-size: 0.55rem; line-height: 1.2;
+}
+.cal-cell .cal-icon-pill.charge { background: rgba(231,76,60,0.18); color: #c0392b; }
+.cal-cell .cal-icon-pill.revenu { background: rgba(39,174,96,0.18); color: #27ae60; }
+.cal-cell .cal-icon-pill.depense { background: rgba(52,152,219,0.18); color: #2980b9; }
+.cal-cell .cal-solde { font-size: 0.55rem; font-weight: 600; opacity: 0.7; }
+.cal-cell.solde-neg .cal-solde { color: #c0392b; opacity: 1; }
+.cal-cell.solde-warn .cal-solde { color: #d35400; opacity: 1; }
+.cal-cell.solde-ok .cal-solde { color: #27ae60; }
+
+@media(max-width:550px){
+  .cal-cell { padding: 2px; }
+  .cal-cell .cal-num { font-size: 0.7rem; }
+  .cal-cell .cal-icon-pill { font-size: 0.5rem; padding: 0 2px; }
+  .cal-cell .cal-solde { font-size: 0.5rem; }
+}
+
+
+/* === CALENDRIER === */
+.cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 3px; margin-bottom: 4px;
+}
+.cal-header {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 3px; margin-bottom: 6px;
+}
+.cal-day-name {
+  text-align: center; font-size: 0.65rem;
+  font-weight: 700; color: var(--muted);
+  text-transform: uppercase; padding: 4px 0;
+}
+.cal-cell {
+  aspect-ratio: 1;
+  background: white; border: 1.5px solid var(--border);
+  border-radius: 8px; padding: 4px 3px;
+  font-size: 0.7rem; cursor: pointer;
+  position: relative; overflow: hidden;
+  transition: transform 0.1s, box-shadow 0.15s;
+  display: flex; flex-direction: column;
+}
+.cal-cell:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.1); transform: scale(1.04); }
+.cal-cell.empty { background: transparent; border: none; cursor: default; }
+.cal-cell.empty:hover { transform: none; box-shadow: none; }
+.cal-cell.today { border-color: var(--primary); border-width: 2.5px; box-shadow: 0 0 0 2px rgba(224,122,58,0.2); }
+.cal-cell.selected { background: linear-gradient(135deg, #fff8f3, #ffe8d6); border-color: var(--primary); }
+.cal-cell.solde-neg { background: #ffe8e8; border-color: #e74c3c; }
+.cal-cell.solde-warn { background: #fff8e1; border-color: #f39c12; }
+.cal-cell.solde-ok { background: #f1f9f1; }
+.cal-cell .cal-num { font-weight: 700; font-size: 0.78rem; color: var(--dark); }
+.cal-cell .cal-icons { display: flex; gap: 2px; flex-wrap: wrap; margin-top: auto; font-size: 0.6rem; }
+.cal-cell .cal-icon-pill {
+  background: rgba(0,0,0,0.08); border-radius: 6px;
+  padding: 1px 3px; font-size: 0.55rem; line-height: 1.2;
+}
+.cal-cell .cal-icon-pill.charge { background: rgba(231,76,60,0.18); color: #c0392b; }
+.cal-cell .cal-icon-pill.revenu { background: rgba(39,174,96,0.18); color: #27ae60; }
+.cal-cell .cal-icon-pill.depense { background: rgba(52,152,219,0.18); color: #2980b9; }
+.cal-cell .cal-solde { font-size: 0.55rem; font-weight: 600; opacity: 0.7; }
+.cal-cell.solde-neg .cal-solde { color: #c0392b; opacity: 1; }
+.cal-cell.solde-warn .cal-solde { color: #d35400; opacity: 1; }
+.cal-cell.solde-ok .cal-solde { color: #27ae60; }
+
+@media(max-width:550px){
+  .cal-cell { padding: 2px; }
+  .cal-cell .cal-num { font-size: 0.7rem; }
+  .cal-cell .cal-icon-pill { font-size: 0.5rem; padding: 0 2px; }
+  .cal-cell .cal-solde { font-size: 0.5rem; }
+}
+
 </style>
 </head>
 <body>
@@ -387,6 +493,7 @@ input:focus,select:focus{border-color:var(--accent);}
   <div class="tab" onclick="showPanel('import',this)">&#128194; Import</div>
   <div class="tab" onclick="showPanel('export',this)">&#128229; Export PDF</div>
   <div class="tab" onclick="showPanel('charges',this)">&#9881;&#65039; Charges</div>
+  <div class="tab" onclick="showPanel('calendrier',this)">&#128197; Calendrier</div>
 </div>
 
 <div class="main">
@@ -780,6 +887,47 @@ input:focus,select:focus{border-color:var(--accent);}
   </div>
 </div>
 
+<div id="panel-calendrier" class="panel">
+  <div class="card-box">
+    <h2>📅 Calendrier financier</h2>
+    <p style="font-size:0.78rem;color:var(--muted);margin:0 0 12px">
+      Vue visuelle mensuelle : charges fixes, dépenses passées, revenus, et alertes de solde.
+    </p>
+    
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <button onclick="calNavigate(-1)" style="padding:8px 14px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer">◀</button>
+      <div id="calMonthLabel" style="font-size:1rem;font-weight:700;color:var(--dark)"></div>
+      <button onclick="calNavigate(1)" style="padding:8px 14px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer">▶</button>
+    </div>
+    
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <label style="font-size:0.78rem;color:var(--muted);margin:0">Compte :</label>
+      <select id="calCompte" onchange="renderCalendrier()" style="flex:1;padding:6px 10px;font-size:0.82rem">
+        <option value="tous">Tous</option>
+        <option value="nickel">💳 Nickel</option>
+        <option value="revolut">💛 Revolut</option>
+      </select>
+    </div>
+    
+    <div id="calGrid"></div>
+    
+    <div id="calDetail" style="margin-top:14px"></div>
+    
+    <div style="margin-top:16px;padding:10px;background:var(--bg-light);border-radius:8px;font-size:0.72rem">
+      <strong>Légende :</strong>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px">
+        <div>🔴 Solde projeté négatif</div>
+        <div>🟠 Solde tendu (&lt; 50€)</div>
+        <div>🟢 Solde confortable</div>
+        <div>📅 Prélèvement auto</div>
+        <div>✋ Virement manuel à faire</div>
+        <div>💰 Revenu attendu</div>
+        <div>•  Aujourd\'hui (cerclé)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div>
 <div class="save-indicator" id="saveIndicator">Sauvegard&eacute; &#10003;</div>
 
@@ -809,22 +957,33 @@ function gc(c) { return CATS.colors[c] || '#95a5a6'; }
 
 var ML = {'2026-01':'Janvier','2026-02':'Février','2026-03':'Mars','2026-04':'Avril'};
 var CHARGES_DEFAULT = [
-  {id:1,nom:'Loyer ESH',montant:778,jour:10,icon:'🏠',compte:'nickel',actif:true},
-  {id:2,nom:'Avocat Me El Sargologo',montant:250,jour:10,icon:'⚖️',compte:'nickel',actif:true,note:'Jusqu\'à mars 2027'},
-  {id:3,nom:'Navigo Annuel',montant:90.80,jour:12,icon:'🚇',compte:'nickel',actif:true},
-  {id:4,nom:'Bouygues (06)',montant:45.99,jour:14,icon:'📱',compte:'nickel',actif:true},
-  {id:5,nom:'Bouygues (09)',montant:47.98,jour:14,icon:'📱',compte:'nickel',actif:true},
-  {id:6,nom:'Acheel Assurance',montant:26.35,jour:15,icon:'💊',compte:'nickel',actif:true},
-  {id:7,nom:'Audible',montant:9.95,jour:15,icon:'📚',compte:'nickel',actif:true},
-  {id:8,nom:'Amazon Prime',montant:6.99,jour:30,icon:'📦',compte:'nickel',actif:true},
-  {id:9,nom:'EDF (provision)',montant:83,jour:5,icon:'⚡',compte:'nickel',actif:false,note:'À activer si facture'},
-  {id:10,nom:'Abonnement Premium Revolut',montant:9.99,jour:28,icon:'💛',compte:'revolut',actif:true}
+  {id:1,nom:'Loyer ESH',montant:778,jour:13,icon:'🏠',compte:'nickel',actif:true,type:'virement',note:'Virement manuel après salaire'},
+  {id:2,nom:'Avocat Me El Sargologo',montant:250,jour:13,icon:'⚖️',compte:'nickel',actif:true,type:'virement',note:'Virement manuel après salaire (jusqu\'à mars 2027)'},
+  {id:3,nom:'Navigo Annuel',montant:90.80,jour:12,icon:'🚇',compte:'nickel',actif:true,type:'prelevement'},
+  {id:4,nom:'Bouygues (06)',montant:45.99,jour:14,icon:'📱',compte:'nickel',actif:true,type:'prelevement'},
+  {id:5,nom:'Bouygues (09)',montant:47.98,jour:14,icon:'📱',compte:'nickel',actif:true,type:'prelevement'},
+  {id:6,nom:'Acheel Assurance',montant:26.35,jour:15,icon:'💊',compte:'nickel',actif:true,type:'prelevement'},
+  {id:7,nom:'Audible',montant:9.95,jour:15,icon:'📚',compte:'nickel',actif:true,type:'prelevement'},
+  {id:8,nom:'Amazon Prime',montant:6.99,jour:30,icon:'📦',compte:'nickel',actif:true,type:'prelevement'},
+  {id:9,nom:'EDF (provision)',montant:83,jour:5,icon:'⚡',compte:'nickel',actif:false,type:'prelevement',note:'À activer si facture'},
+  {id:10,nom:'Abonnement Premium Revolut',montant:9.99,jour:28,icon:'💛',compte:'revolut',actif:true,type:'prelevement'}
 ];
 
 var CHARGES = (function(){
   var saved = localStorage.getItem('ketty_charges');
   if (saved) {
-    try { return JSON.parse(saved); } catch(e) { return CHARGES_DEFAULT.slice(); }
+    try {
+      var arr = JSON.parse(saved);
+      // Migration : ajouter le champ type si absent (anciennes versions)
+      arr.forEach(function(c){
+        if (!c.type) {
+          // Détection auto : si le nom contient loyer ou avocat → virement, sinon prelevement
+          var n = (c.nom || '').toLowerCase();
+          c.type = (n.indexOf('loyer') >= 0 || n.indexOf('avocat') >= 0) ? 'virement' : 'prelevement';
+        }
+      });
+      return arr;
+    } catch(e) { return CHARGES_DEFAULT.slice(); }
   }
   return CHARGES_DEFAULT.slice();
 })();
@@ -854,7 +1013,7 @@ function saveLS() {
 }
 function getLS(k, def) { try { var s=localStorage.getItem(k); return s?JSON.parse(s):def; } catch(e){return def;} }
 // Force reset si ancienne version détectée
-var appVersion = '2026-05-01-v9-charges-editables';
+var appVersion = '2026-05-01-v11-virements-manuels';
 if (localStorage.getItem('ketty_version') !== appVersion) {
   // On efface seulement les ops/budgets pour appliquer les nouvelles données
   // MAIS on conserve les soldes saisis par l'utilisateur (Nickel, Revolut)
@@ -2823,7 +2982,7 @@ function analyseRisqueRejet() {
   
   // Charges fixes à venir ce mois et le mois suivant
   // Ne traiter que les charges actives et celles affectant le compte Nickel
-  CHARGES.filter(function(c){return c.actif !== false && (c.compte||'nickel') === 'nickel';}).forEach(function(c) {
+  CHARGES.filter(function(c){return c.actif !== false && (c.compte||'nickel') === 'nickel' && c.type !== 'virement';}).forEach(function(c) {
     // Ce mois
     if (c.jour > jour) {
       var d = new Date(annee, mois, c.jour);
@@ -2934,6 +3093,41 @@ function renderPanelRisque() {
     html += '</div>';
   }
   
+  // Virements manuels à faire (séparé du risque de rejet)
+  var today2 = new Date();
+  var virementsAVenir = [];
+  CHARGES.filter(function(c){return c.actif !== false && c.type === 'virement';}).forEach(function(c){
+    var dateC = new Date(today2.getFullYear(), today2.getMonth(), c.jour);
+    if (dateC < today2) {
+      // Si jour passé, prendre le mois suivant
+      dateC = new Date(today2.getFullYear(), today2.getMonth()+1, c.jour);
+    }
+    var diff = Math.ceil((dateC - today2) / 86400000);
+    if (diff <= 30) {
+      virementsAVenir.push({nom:c.nom, montant:c.montant, icon:c.icon||'💸', dans:diff, jour:c.jour, dateC:dateC});
+    }
+  });
+  virementsAVenir.sort(function(a,b){return a.dans - b.dans;});
+  
+  if (virementsAVenir.length > 0) {
+    html += '<div class="card-box" style="background:#f4ecf7;border-left:4px solid #8e44ad">';
+    html += '<h2 style="margin:0 0 10px;color:#8e44ad">✋ Virements à faire toi-même</h2>';
+    html += '<p style="margin:0 0 10px;font-size:0.78rem;color:var(--muted)">Ces virements ne sont pas automatiques. Ils ne créent pas de risque de rejet, mais à toi de les déclencher (ex: jour du salaire).</p>';
+    var totalVir = 0;
+    virementsAVenir.forEach(function(v){
+      totalVir += v.montant;
+      var dansLib = v.dans === 0 ? "Aujourd'hui" : (v.dans === 1 ? "Demain" : 'Dans ' + v.dans + ' jours');
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:white;border-radius:6px;margin-bottom:6px">';
+      html += '<div><div style="font-weight:600;font-size:0.85rem">' + v.icon + ' ' + v.nom + '</div><div style="font-size:0.72rem;color:var(--muted)">' + dansLib + ' (le ' + v.jour + ')</div></div>';
+      html += '<div style="font-weight:700;color:#8e44ad">' + v.montant.toFixed(2).replace('.',',') + '€</div>';
+      html += '</div>';
+    });
+    html += '<div style="margin-top:8px;padding:8px 10px;background:white;border-radius:6px;display:flex;justify-content:space-between;font-weight:700;color:#8e44ad">';
+    html += '<span>Total à virer ce mois-ci :</span><span>' + totalVir.toFixed(2).replace('.',',') + '€</span>';
+    html += '</div>';
+    html += '</div>';
+  }
+  
   // Calendrier des événements
   html += '<div class="card-box">';
   html += '<h2 style="margin:0 0 10px">📅 Événements à venir (30 jours)</h2>';
@@ -2999,11 +3193,19 @@ function renderChargesEdit() {
     html += '<span style="background:' + compteBg + ';color:' + compteCol + ';padding:3px 8px;border-radius:6px;font-size:0.7rem;font-weight:600">' + compteLib + '</span>';
     html += '</div>';
     
+    // Badge type charge
+    var typeCharge = c.type || 'prelevement';
+    var typeLib = typeCharge === 'virement' ? '✋ Virement manuel' : '🤖 Prélèvement auto';
+    var typeBg = typeCharge === 'virement' ? '#e8f4fc' : '#fef3e6';
+    var typeCol = typeCharge === 'virement' ? '#2980b9' : '#d35400';
+    html += '<div style="margin-top:4px"><span style="background:' + typeBg + ';color:' + typeCol + ';padding:2px 8px;border-radius:5px;font-size:0.65rem;font-weight:600">' + typeLib + '</span></div>';
+    
     // Ligne 2 : actions
-    html += '<div style="display:flex;gap:6px;margin-top:8px">';
-    html += '<button onclick="editCharge(' + c.id + ')" style="flex:1;padding:7px;background:#3498db;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">✏️ Modifier</button>';
-    html += '<button onclick="toggleCharge(' + c.id + ')" style="flex:1;padding:7px;background:' + (actif ? '#f39c12' : '#27ae60') + ';color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">' + (actif ? '⏸ Désactiver' : '▶ Activer') + '</button>';
-    html += '<button onclick="deleteCharge(' + c.id + ')" style="flex:0 0 auto;padding:7px 12px;background:#e74c3c;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">🗑️</button>';
+    html += '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">';
+    html += '<button onclick="editCharge(' + c.id + ')" style="flex:1;min-width:80px;padding:7px;background:#3498db;color:white;border:none;border-radius:6px;font-size:0.72rem;font-weight:600;cursor:pointer">✏️ Modifier</button>';
+    html += '<button onclick="toggleChargeType(' + c.id + ')" style="flex:1;min-width:80px;padding:7px;background:#9b59b6;color:white;border:none;border-radius:6px;font-size:0.72rem;font-weight:600;cursor:pointer">🔄 Type</button>';
+    html += '<button onclick="toggleCharge(' + c.id + ')" style="flex:1;min-width:80px;padding:7px;background:' + (actif ? '#f39c12' : '#27ae60') + ';color:white;border:none;border-radius:6px;font-size:0.72rem;font-weight:600;cursor:pointer">' + (actif ? '⏸ Off' : '▶ On') + '</button>';
+    html += '<button onclick="deleteCharge(' + c.id + ')" style="flex:0 0 auto;padding:7px 12px;background:#e74c3c;color:white;border:none;border-radius:6px;font-size:0.72rem;font-weight:600;cursor:pointer">🗑️</button>';
     html += '</div>';
     
     html += '</div>';
@@ -3039,9 +3241,10 @@ function addCharge() {
   if (!nom || !nom.trim()) return;
   var montant = parseFloat((prompt('Montant en € :') || '').replace(',','.'));
   if (isNaN(montant) || montant <= 0) { alert('Montant invalide.'); return; }
-  var jour = parseInt(prompt('Jour du mois où la charge est prélevée (1-31) :') || '0');
+  var jour = parseInt(prompt('Jour du mois (1-31) :') || '0');
   if (jour < 1 || jour > 31) { alert('Jour invalide.'); return; }
   var compte = confirm('Charge sur compte Nickel ? (OK = Nickel, Annuler = Revolut)') ? 'nickel' : 'revolut';
+  var typeCharge = confirm('Type de charge :\n\nOK = 🤖 Prélèvement automatique (compte dans le risque de rejet)\nAnnuler = ✋ Virement manuel (à faire toi-même, ne crée pas de risque)') ? 'prelevement' : 'virement';
   
   CHARGES.push({
     id: nextChargeId(),
@@ -3050,11 +3253,12 @@ function addCharge() {
     jour: jour,
     icon: '💸',
     compte: compte,
+    type: typeCharge,
     actif: true
   });
   saveCHARGES();
   renderChargesEdit();
-  renderCharges(); // mise à jour de la liste accueil
+  renderCharges();
 }
 
 function editCharge(id) {
@@ -3084,6 +3288,15 @@ function toggleCharge(id) {
   renderCharges();
 }
 
+function toggleChargeType(id) {
+  var c = CHARGES.find(function(x){return x.id===id;});
+  if (!c) return;
+  c.type = (c.type === 'virement') ? 'prelevement' : 'virement';
+  saveCHARGES();
+  renderChargesEdit();
+  renderCharges();
+}
+
 function deleteCharge(id) {
   var c = CHARGES.find(function(x){return x.id===id;});
   if (!c) return;
@@ -3100,6 +3313,306 @@ function resetCharges() {
   saveCHARGES();
   renderChargesEdit();
   renderCharges();
+}
+
+
+// ── CALENDRIER FINANCIER ────────────────────────────
+var calCurrentMonth = new Date(); // mois affiché
+var calSelectedDate = null;
+var MOIS_NOMS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+var JOURS_FR = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+
+function calNavigate(delta) {
+  calCurrentMonth = new Date(calCurrentMonth.getFullYear(), calCurrentMonth.getMonth() + delta, 1);
+  calSelectedDate = null;
+  renderCalendrier();
+}
+
+function renderCalendrier() {
+  var label = document.getElementById('calMonthLabel');
+  var grid = document.getElementById('calGrid');
+  var detail = document.getElementById('calDetail');
+  if (!label || !grid) return;
+  
+  var year = calCurrentMonth.getFullYear();
+  var month = calCurrentMonth.getMonth();
+  var moisStr = year + '-' + String(month+1).padStart(2,'0');
+  label.textContent = MOIS_NOMS_FR[month] + ' ' + year;
+  
+  var compteFiltre = document.getElementById('calCompte') ? document.getElementById('calCompte').value : 'tous';
+  
+  // Calculer le solde de départ : solde Nickel actuel + total des ops futures jusqu'au 1er du mois affiché
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  var debutMois = new Date(year, month, 1);
+  
+  // Ops du mois affiché (et compte si filtré)
+  var opsMois = ops.filter(function(o) {
+    if (o.date.indexOf(moisStr) !== 0) return false;
+    if (compteFiltre === 'tous') return true;
+    return (o.compte || 'nickel') === compteFiltre;
+  });
+  
+  // Solde de départ pour la projection
+  var soldeDepart;
+  if (compteFiltre === 'revolut') {
+    soldeDepart = parseFloat(localStorage.getItem('ketty_revolut') || '0');
+  } else {
+    soldeDepart = parseFloat(localStorage.getItem('ketty_nickel_solde') || '0');
+    if (compteFiltre === 'tous') {
+      soldeDepart += parseFloat(localStorage.getItem('ketty_revolut') || '0');
+    }
+  }
+  
+  // Si on regarde un mois futur, projeter le solde au 1er du mois
+  if (debutMois > today) {
+    // Ajouter ops entre aujourd'hui et début du mois
+    var opsEntre = ops.filter(function(o) {
+      if (compteFiltre !== 'tous' && (o.compte||'nickel') !== compteFiltre) return false;
+      var d = new Date(o.date);
+      return d >= today && d < debutMois;
+    });
+    soldeDepart += opsEntre.reduce(function(s,o){return s+o.montant;},0);
+    // Ajouter aussi les charges fixes prévues
+    var dCur = new Date(today);
+    while (dCur < debutMois) {
+      CHARGES.filter(function(c){return c.actif!==false;}).forEach(function(c){
+        if (compteFiltre !== 'tous' && (c.compte||'nickel') !== compteFiltre) return;
+        if (c.jour === dCur.getDate()) soldeDepart -= c.montant;
+      });
+      dCur.setDate(dCur.getDate()+1);
+    }
+  } else if (debutMois < today) {
+    // Mois passé : reconstituer le solde au 1er du mois
+    // (approche simple : retirer les ops après le 1er du mois)
+    var opsApres = ops.filter(function(o) {
+      if (compteFiltre !== 'tous' && (o.compte||'nickel') !== compteFiltre) return false;
+      var d = new Date(o.date);
+      return d >= debutMois;
+    });
+    soldeDepart -= opsApres.reduce(function(s,o){return s+o.montant;},0);
+  }
+  
+  // Construire la grille
+  var firstDay = new Date(year, month, 1);
+  var lastDay = new Date(year, month+1, 0);
+  var nbJours = lastDay.getDate();
+  // En FR : lundi = 1, donc shift pour que lundi soit en première colonne
+  var startCol = (firstDay.getDay() + 6) % 7; // 0 = lundi
+  
+  // Header avec jours de la semaine
+  var html = '<div class="cal-header">';
+  JOURS_FR.forEach(function(j){
+    html += '<div class="cal-day-name">' + j + '</div>';
+  });
+  html += '</div>';
+  
+  // Grille
+  html += '<div class="cal-grid">';
+  // Cases vides au début
+  for (var i = 0; i < startCol; i++) {
+    html += '<div class="cal-cell empty"></div>';
+  }
+  
+  // Calculer le solde projeté jour par jour
+  var soldeJour = soldeDepart;
+  
+  for (var d = 1; d <= nbJours; d++) {
+    var dateObj = new Date(year, month, d);
+    var dateStr = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+    
+    // Ops de ce jour
+    var opsJour = opsMois.filter(function(o){return o.date === dateStr;});
+    var totalJour = opsJour.reduce(function(s,o){return s+o.montant;},0);
+    
+    // Charges fixes ce jour-là (si dans le futur)
+    var chargesJour = [];
+    var virementsJour = [];
+    if (dateObj >= today) {
+      CHARGES.filter(function(c){return c.actif !== false && c.jour === d;}).forEach(function(c){
+        if (compteFiltre === 'tous' || (c.compte||'nickel') === compteFiltre) {
+          if (c.type === 'virement') {
+            virementsJour.push(c);
+            // Les virements manuels comptent dans le solde projeté SI on est après le salaire
+            // Sinon ils sont conditionnels — on les inclut dans le solde quand même
+            // car en pratique tu fais le virement le jour du salaire
+            totalJour -= c.montant;
+          } else {
+            chargesJour.push(c);
+            totalJour -= c.montant;
+          }
+        }
+      });
+    }
+    
+    // Revenus prévus (salaire ~13, CAF ~6)
+    var revenusJour = [];
+    if (dateObj >= today) {
+      if (d === 13 && (compteFiltre === 'tous' || compteFiltre === 'nickel')) {
+        revenusJour.push({nom:'Salaire', icon:'💰', montant:1349.23});
+        totalJour += 1349.23;
+      }
+      if (d === 6 && (compteFiltre === 'tous' || compteFiltre === 'nickel')) {
+        revenusJour.push({nom:'CAF', icon:'🏛️', montant:401.40});
+        totalJour += 401.40;
+      }
+    }
+    
+    soldeJour += totalJour;
+    
+    // Classes selon solde
+    var soldeClass = '';
+    if (dateObj >= today) {
+      if (soldeJour < 0) soldeClass = 'solde-neg';
+      else if (soldeJour < 50) soldeClass = 'solde-warn';
+      else if (chargesJour.length > 0 || revenusJour.length > 0) soldeClass = 'solde-ok';
+    }
+    
+    var todayClass = (dateObj.toDateString() === today.toDateString()) ? ' today' : '';
+    var selClass = (calSelectedDate === dateStr) ? ' selected' : '';
+    
+    html += '<div class="cal-cell ' + soldeClass + todayClass + selClass + '" onclick="calSelectDate(\'' + dateStr + '\')">';
+    html += '<div class="cal-num">' + d + '</div>';
+    html += '<div class="cal-icons">';
+    
+    // Icônes pills
+    var nbCharges = chargesJour.length;
+    var nbRevenus = revenusJour.length;
+    var nbOps = opsJour.length;
+    var nbDepenses = opsJour.filter(function(o){return o.montant<0;}).length;
+    var nbCredit = opsJour.filter(function(o){return o.montant>0;}).length;
+    
+    var nbVirements = virementsJour.length;
+    if (nbCharges > 0) html += '<span class="cal-icon-pill charge">📅' + (nbCharges>1?nbCharges:'') + '</span>';
+    if (nbVirements > 0) html += '<span class="cal-icon-pill" style="background:rgba(155,89,182,0.2);color:#8e44ad">✋' + (nbVirements>1?nbVirements:'') + '</span>';
+    if (nbRevenus > 0) html += '<span class="cal-icon-pill revenu">💰</span>';
+    if (nbDepenses > 0) html += '<span class="cal-icon-pill depense">' + nbDepenses + '</span>';
+    if (nbCredit > 0 && nbRevenus === 0) html += '<span class="cal-icon-pill revenu">+</span>';
+    
+    html += '</div>';
+    
+    // Solde projeté
+    if (dateObj >= today && (nbCharges > 0 || nbRevenus > 0 || nbVirements > 0)) {
+      html += '<div class="cal-solde">' + Math.round(soldeJour) + '€</div>';
+    }
+    
+    html += '</div>';
+  }
+  
+  html += '</div>';
+  grid.innerHTML = html;
+  
+  // Détail si jour sélectionné
+  if (calSelectedDate) {
+    detail.innerHTML = renderCalDetail(calSelectedDate);
+  } else {
+    // Résumé du mois
+    var depMois = opsMois.filter(function(o){return o.montant<0;}).reduce(function(s,o){return s+Math.abs(o.montant);},0);
+    var revMois = opsMois.filter(function(o){return o.montant>0;}).reduce(function(s,o){return s+o.montant;},0);
+    detail.innerHTML = 
+      '<div style="background:var(--bg-light);padding:12px;border-radius:8px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">' +
+      '<div><div style="font-size:0.7rem;color:var(--muted)">Revenus</div><div style="font-weight:700;color:#27ae60">+' + revMois.toFixed(0) + '€</div></div>' +
+      '<div><div style="font-size:0.7rem;color:var(--muted)">Dépenses</div><div style="font-weight:700;color:#e74c3c">-' + depMois.toFixed(0) + '€</div></div>' +
+      '<div><div style="font-size:0.7rem;color:var(--muted)">Net</div><div style="font-weight:700;color:' + (revMois-depMois>=0?'#27ae60':'#e74c3c') + '">' + (revMois-depMois>=0?'+':'') + (revMois-depMois).toFixed(0) + '€</div></div>' +
+      '</div>' +
+      '<p style="text-align:center;font-size:0.74rem;color:var(--muted);margin-top:10px">Touche un jour pour voir le détail.</p>';
+  }
+}
+
+function calSelectDate(dateStr) {
+  calSelectedDate = (calSelectedDate === dateStr) ? null : dateStr;
+  renderCalendrier();
+}
+
+function renderCalDetail(dateStr) {
+  var compteFiltre = document.getElementById('calCompte').value;
+  var d = new Date(dateStr);
+  var today = new Date(); today.setHours(0,0,0,0);
+  var dateLib = d.getDate() + ' ' + MOIS_NOMS_FR[d.getMonth()].toLowerCase() + ' ' + d.getFullYear();
+  
+  var opsJour = ops.filter(function(o) {
+    if (o.date !== dateStr) return false;
+    if (compteFiltre !== 'tous' && (o.compte||'nickel') !== compteFiltre) return false;
+    return true;
+  });
+  
+  var chargesJour = [];
+  var virementsJour = [];
+  if (d >= today) {
+    CHARGES.filter(function(c) {
+      if (c.actif === false) return false;
+      if (c.jour !== d.getDate()) return false;
+      if (compteFiltre !== 'tous' && (c.compte||'nickel') !== compteFiltre) return false;
+      return true;
+    }).forEach(function(c){
+      if (c.type === 'virement') virementsJour.push(c);
+      else chargesJour.push(c);
+    });
+  }
+  
+  var revenusJour = [];
+  if (d >= today) {
+    if (d.getDate() === 13 && (compteFiltre === 'tous' || compteFiltre === 'nickel')) {
+      revenusJour.push({nom:'Salaire Starsnett (estimé)', icon:'💰', montant:1349.23});
+    }
+    if (d.getDate() === 6 && (compteFiltre === 'tous' || compteFiltre === 'nickel')) {
+      revenusJour.push({nom:'CAF (estimée)', icon:'🏛️', montant:401.40});
+    }
+  }
+  
+  var html = '<div class="card-box" style="margin:0;background:white">';
+  html += '<h3 style="margin:0 0 10px;font-size:0.95rem">📍 ' + dateLib + '</h3>';
+  
+  if (chargesJour.length === 0 && virementsJour.length === 0 && revenusJour.length === 0 && opsJour.length === 0) {
+    html += '<p style="color:var(--muted);font-size:0.82rem;margin:0">Aucun mouvement ce jour.</p>';
+  } else {
+    if (revenusJour.length > 0) {
+      html += '<div style="margin-bottom:8px"><strong style="font-size:0.78rem;color:#27ae60">💰 Revenus prévus :</strong></div>';
+      revenusJour.forEach(function(r){
+        html += '<div style="display:flex;justify-content:space-between;padding:6px 8px;background:#d4edda;border-radius:6px;margin-bottom:4px;font-size:0.82rem">';
+        html += '<span>' + r.icon + ' ' + r.nom + '</span>';
+        html += '<span style="font-weight:700;color:#27ae60">+' + r.montant.toFixed(2).replace('.',',') + '€</span>';
+        html += '</div>';
+      });
+    }
+    
+    if (chargesJour.length > 0) {
+      html += '<div style="margin-top:8px;margin-bottom:8px"><strong style="font-size:0.78rem;color:#c0392b">📅 Prélèvements automatiques :</strong></div>';
+      chargesJour.forEach(function(c){
+        var cBadge = (c.compte||'nickel') === 'nickel' ? '💳' : '💛';
+        html += '<div style="display:flex;justify-content:space-between;padding:6px 8px;background:#fee;border-radius:6px;margin-bottom:4px;font-size:0.82rem">';
+        html += '<span>' + (c.icon||'💸') + ' ' + c.nom + ' ' + cBadge + '</span>';
+        html += '<span style="font-weight:700;color:#c0392b">-' + c.montant.toFixed(2).replace('.',',') + '€</span>';
+        html += '</div>';
+      });
+    }
+    
+    if (virementsJour.length > 0) {
+      html += '<div style="margin-top:8px;margin-bottom:8px"><strong style="font-size:0.78rem;color:#8e44ad">✋ Virements manuels à faire :</strong></div>';
+      virementsJour.forEach(function(c){
+        var cBadge = (c.compte||'nickel') === 'nickel' ? '💳' : '💛';
+        html += '<div style="display:flex;justify-content:space-between;padding:6px 8px;background:#f4ecf7;border-radius:6px;margin-bottom:4px;font-size:0.82rem">';
+        html += '<span>' + (c.icon||'💸') + ' ' + c.nom + ' ' + cBadge + '</span>';
+        html += '<span style="font-weight:700;color:#8e44ad">-' + c.montant.toFixed(2).replace('.',',') + '€</span>';
+        html += '</div>';
+      });
+    }
+    
+    if (opsJour.length > 0) {
+      html += '<div style="margin-top:8px;margin-bottom:8px"><strong style="font-size:0.78rem;color:var(--dark)">📝 Opérations enregistrées :</strong></div>';
+      opsJour.forEach(function(o){
+        var compteIcon = (o.compte||'nickel') === 'nickel' ? '💳' : '💛';
+        var col = o.montant >= 0 ? '#27ae60' : '#2c3e50';
+        html += '<div style="display:flex;justify-content:space-between;padding:6px 8px;background:var(--bg-light);border-radius:6px;margin-bottom:4px;font-size:0.78rem">';
+        html += '<span><span style="font-size:0.65rem;color:var(--muted)">' + o.categorie + ' ' + compteIcon + '</span><br>' + o.libelle.substring(0,30) + '</span>';
+        html += '<span style="font-weight:700;color:' + col + ';white-space:nowrap">' + (o.montant >= 0 ? '+' : '') + o.montant.toFixed(2).replace('.',',') + '€</span>';
+        html += '</div>';
+      });
+    }
+  }
+  
+  html += '</div>';
+  return html;
 }
 
 </script>
