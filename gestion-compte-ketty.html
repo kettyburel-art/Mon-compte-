@@ -813,7 +813,7 @@ function saveLS() {
 }
 function getLS(k, def) { try { var s=localStorage.getItem(k); return s?JSON.parse(s):def; } catch(e){return def;} }
 // Force reset si ancienne version détectée
-var appVersion = '2026-05-01-v7-export-pdf';
+var appVersion = '2026-05-01-v8-risque-rejet';
 if (localStorage.getItem('ketty_version') !== appVersion) {
   // On efface seulement les ops/budgets pour appliquer les nouvelles données
   // MAIS on conserve les soldes saisis par l'utilisateur (Nickel, Revolut)
@@ -1318,7 +1318,9 @@ function checkAlertes() {
   });
   var el=document.getElementById('alertesContent');
   if(el){
-    var h='<div class="card-box"><h2>🔔 Alertes en temps réel</h2>';
+    // Risque de rejet en premier
+    var h = renderPanelRisque();
+    h += '<div class="card-box"><h2>🔔 Alertes en temps réel</h2>';
     alertes.forEach(function(a){h+='<div class="alert-item '+a.type+'"><div class="alert-icon">'+a.icon+'</div><div><div class="alert-title">'+a.title+'</div><div class="alert-desc">'+a.desc+'</div></div></div>';});
     el.innerHTML=h+'</div>';
   }
@@ -2018,6 +2020,17 @@ function renderAccueil() {
 
   var html = '';
 
+  // ALERTE RISQUE DE REJET en haut si nécessaire
+  var risque = analyseRisqueRejet();
+  if (risque.risques.length > 0) {
+    html += '<div style="background:linear-gradient(135deg,#dc3545,#c82333);color:white;padding:14px 16px;border-radius:10px;margin-bottom:12px;cursor:pointer" onclick="showPanel(\'alertes\',null)">';
+    html += '<div style="font-weight:700;font-size:0.95rem;margin-bottom:4px">🚨 Risque de rejet détecté</div>';
+    html += '<div style="font-size:0.8rem;opacity:0.95">' + risque.risques.length + ' charge(s) sans provision suffisante. ';
+    if (risque.aVirer > 0) html += 'Vire <strong>' + risque.aVirer + '€</strong> depuis Revolut. ';
+    html += '<u>Voir détails →</u></div>';
+    html += '</div>';
+  }
+  
   // Welcome banner
   html += '<div class="dash-welcome">';
   html += '<h2>'+salut+' Ketty 👋</h2>';
@@ -2727,6 +2740,168 @@ function generatePDF(typeRapport, style) {
   setTimeout(function(){
     try { w.focus(); } catch(e) {}
   }, 300);
+}
+
+
+// ── ANALYSE RISQUE DE REJET ────────────────────────
+function analyseRisqueRejet() {
+  // Date du jour réelle
+  var today = new Date();
+  var jour = today.getDate();
+  var mois = today.getMonth(); // 0-indexed
+  var annee = today.getFullYear();
+  
+  // Solde Nickel actuel
+  var soldeNickel = parseFloat(localStorage.getItem('ketty_nickel_solde') || '0');
+  var soldeRevolut = parseFloat(localStorage.getItem('ketty_revolut') || '0');
+  
+  // Construire la liste des événements à venir (30 jours)
+  var evenements = [];
+  
+  // Charges fixes à venir ce mois et le mois suivant
+  CHARGES.forEach(function(c) {
+    // Ce mois
+    if (c.jour > jour) {
+      var d = new Date(annee, mois, c.jour);
+      var diff = Math.ceil((d - today) / 86400000);
+      if (diff <= 30) {
+        evenements.push({
+          date: d, jour: c.jour, type: 'charge',
+          nom: c.nom, montant: -c.montant, icon: c.icon, dans: diff
+        });
+      }
+    }
+    // Mois suivant
+    var dN = new Date(annee, mois + 1, c.jour);
+    var diffN = Math.ceil((dN - today) / 86400000);
+    if (diffN <= 30 && diffN > 0) {
+      evenements.push({
+        date: dN, jour: c.jour, type: 'charge',
+        nom: c.nom, montant: -c.montant, icon: c.icon, dans: diffN
+      });
+    }
+  });
+  
+  // Revenus estimés (salaire ~13 du mois, CAF ~6)
+  // Ce mois
+  if (jour < 13) {
+    var dSal = new Date(annee, mois, 13);
+    evenements.push({
+      date: dSal, jour: 13, type: 'revenu',
+      nom: 'Salaire Starsnett (estimé)', montant: 1349.23, icon: '💰',
+      dans: Math.ceil((dSal - today) / 86400000)
+    });
+  }
+  if (jour < 6) {
+    var dCAF = new Date(annee, mois, 6);
+    evenements.push({
+      date: dCAF, jour: 6, type: 'revenu',
+      nom: 'CAF (estimé)', montant: 401.40, icon: '🏛️',
+      dans: Math.ceil((dCAF - today) / 86400000)
+    });
+  }
+  // Mois suivant
+  var dSalN = new Date(annee, mois + 1, 13);
+  evenements.push({
+    date: dSalN, jour: 13, type: 'revenu',
+    nom: 'Salaire Starsnett (estimé)', montant: 1349.23, icon: '💰',
+    dans: Math.ceil((dSalN - today) / 86400000)
+  });
+  var dCAFN = new Date(annee, mois + 1, 6);
+  if (Math.ceil((dCAFN - today) / 86400000) <= 30) {
+    evenements.push({
+      date: dCAFN, jour: 6, type: 'revenu',
+      nom: 'CAF (estimé)', montant: 401.40, icon: '🏛️',
+      dans: Math.ceil((dCAFN - today) / 86400000)
+    });
+  }
+  
+  // Trier par date
+  evenements.sort(function(a, b) { return a.date - b.date; });
+  
+  // Simuler le solde jour par jour
+  var soldeProj = soldeNickel;
+  var risques = [];
+  evenements.forEach(function(e) {
+    soldeProj += e.montant;
+    e.soldeApres = soldeProj;
+    if (soldeProj < 0 && e.type === 'charge') {
+      risques.push(e);
+    }
+  });
+  
+  // Calculer le montant à virer depuis Revolut pour éviter les rejets
+  var aVirer = 0;
+  if (risques.length > 0) {
+    // Le pire creux à combler
+    var minSolde = Math.min.apply(null, evenements.map(function(e){return e.soldeApres;}));
+    aVirer = Math.ceil(Math.abs(minSolde) + 20); // +20€ de marge
+  }
+  
+  return {
+    today: today, soldeNickel: soldeNickel, soldeRevolut: soldeRevolut,
+    evenements: evenements, risques: risques, aVirer: aVirer
+  };
+}
+
+function renderPanelRisque() {
+  var r = analyseRisqueRejet();
+  var html = '';
+  
+  // Card principale : statut global
+  if (r.risques.length === 0) {
+    html += '<div class="card-box" style="background:#d4edda;border-left:4px solid #28a745">';
+    html += '<h2 style="margin:0 0 6px;color:#155724">✅ Aucun risque de rejet sur 30 jours</h2>';
+    html += '<p style="margin:0;font-size:0.82rem;color:#155724">Solde Nickel actuel : <strong>' + r.soldeNickel.toFixed(2).replace('.',',') + '€</strong>. Toutes les charges à venir seront couvertes.</p>';
+    html += '</div>';
+  } else {
+    html += '<div class="card-box" style="background:#f8d7da;border-left:4px solid #dc3545">';
+    html += '<h2 style="margin:0 0 6px;color:#721c24">🚨 Risque de rejet détecté</h2>';
+    html += '<p style="margin:0 0 8px;font-size:0.82rem;color:#721c24">' + r.risques.length + ' charge(s) risque(nt) d\'être rejetée(s) faute de provision suffisante.</p>';
+    if (r.aVirer > 0) {
+      html += '<div style="margin-top:10px;padding:10px;background:white;border-radius:6px">';
+      html += '<strong style="color:#dc3545;font-size:1.1rem">→ Virer ' + r.aVirer.toFixed(0) + '€ depuis Revolut vers Nickel</strong>';
+      html += '<div style="font-size:0.74rem;color:var(--muted);margin-top:4px">Recommandation pour éviter les frais de rejet (10€ par incident).</div>';
+      if (r.soldeRevolut < r.aVirer) {
+        html += '<div style="margin-top:6px;padding:6px;background:#fff3cd;border-radius:4px;font-size:0.74rem">⚠️ Ton solde Revolut (' + r.soldeRevolut.toFixed(2).replace('.',',') + '€) est insuffisant pour ce virement.</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  
+  // Calendrier des événements
+  html += '<div class="card-box">';
+  html += '<h2 style="margin:0 0 10px">📅 Événements à venir (30 jours)</h2>';
+  
+  if (r.evenements.length === 0) {
+    html += '<p style="color:var(--muted);font-size:0.85rem">Aucun événement prévu.</p>';
+  } else {
+    html += '<div style="display:grid;grid-template-columns:auto auto 1fr auto auto;gap:8px;font-size:0.82rem">';
+    html += '<div style="font-weight:600;font-size:0.7rem;color:var(--muted);text-transform:uppercase;padding-bottom:4px;border-bottom:1px solid var(--border)">Dans</div>';
+    html += '<div style="font-weight:600;font-size:0.7rem;color:var(--muted);text-transform:uppercase;padding-bottom:4px;border-bottom:1px solid var(--border)"></div>';
+    html += '<div style="font-weight:600;font-size:0.7rem;color:var(--muted);text-transform:uppercase;padding-bottom:4px;border-bottom:1px solid var(--border)">Événement</div>';
+    html += '<div style="font-weight:600;font-size:0.7rem;color:var(--muted);text-transform:uppercase;padding-bottom:4px;border-bottom:1px solid var(--border);text-align:right">Montant</div>';
+    html += '<div style="font-weight:600;font-size:0.7rem;color:var(--muted);text-transform:uppercase;padding-bottom:4px;border-bottom:1px solid var(--border);text-align:right">Solde</div>';
+    
+    r.evenements.forEach(function(e) {
+      var bg = e.soldeApres < 0 ? 'background:#f8d7da' : (e.type === 'revenu' ? 'background:#d4edda' : '');
+      var couleurMontant = e.montant >= 0 ? '#27ae60' : '#e74c3c';
+      var couleurSolde = e.soldeApres < 0 ? '#dc3545' : '#2c3e50';
+      var iconAlerte = e.soldeApres < 0 ? ' 🚨' : '';
+      var dansLib = e.dans === 0 ? "Auj." : (e.dans === 1 ? "Demain" : 'J+' + e.dans);
+      
+      html += '<div style="padding:6px 4px;font-weight:600;color:' + (e.dans <= 3 ? '#e74c3c' : '#2c3e50') + ';' + bg + '">' + dansLib + '</div>';
+      html += '<div style="padding:6px 4px;' + bg + '">' + e.icon + '</div>';
+      html += '<div style="padding:6px 4px;' + bg + '">' + e.nom + iconAlerte + '</div>';
+      html += '<div style="padding:6px 4px;text-align:right;font-family:monospace;color:' + couleurMontant + ';font-weight:600;' + bg + '">' + (e.montant >= 0 ? '+' : '') + e.montant.toFixed(2).replace('.',',') + '€</div>';
+      html += '<div style="padding:6px 4px;text-align:right;font-family:monospace;color:' + couleurSolde + ';font-weight:600;' + bg + '">' + e.soldeApres.toFixed(0) + '€</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+  
+  return html;
 }
 
 </script>
