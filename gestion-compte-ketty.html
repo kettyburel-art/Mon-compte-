@@ -494,6 +494,7 @@ input:focus,select:focus{border-color:var(--accent);}
   <div class="tab" onclick="showPanel('export',this)">&#128229; Export PDF</div>
   <div class="tab" onclick="showPanel('charges',this)">&#9881;&#65039; Charges</div>
   <div class="tab" onclick="showPanel('calendrier',this)">&#128197; Calendrier</div>
+  <div class="tab" onclick="showPanel('backup',this)">&#128190; Backup</div>
 </div>
 
 <div class="main">
@@ -928,6 +929,44 @@ input:focus,select:focus{border-color:var(--accent);}
   </div>
 </div>
 
+<div id="panel-backup" class="panel">
+  <div class="card-box">
+    <h2>💾 Backups & restauration</h2>
+    <p style="font-size:0.78rem;color:var(--muted);margin:0 0 12px">
+      Sauvegardes automatiques quotidiennes avec rotation sur 7 jours. 
+      Permet de restaurer ton état si tu effaces par erreur ou en cas de bug.
+    </p>
+    
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <button class="submit-btn" style="background:linear-gradient(135deg,#3498db,#2980b9);font-size:0.78rem" onclick="manualBackup()">
+        💾 Backup maintenant
+      </button>
+      <button class="submit-btn" style="background:linear-gradient(135deg,#9b59b6,#8e44ad);font-size:0.78rem" onclick="exportBackupFile()">
+        📤 Exporter en .json
+      </button>
+    </div>
+    
+    <div style="margin-bottom:14px">
+      <label style="font-size:0.8rem;font-weight:600">Importer un backup .json (depuis fichier)</label>
+      <input type="file" id="backupFile" accept=".json" onchange="importBackupFile(event)" 
+             style="width:100%;padding:10px;border:1.5px dashed var(--border);border-radius:8px;background:var(--bg-light);margin-top:4px">
+    </div>
+    
+    <h3 style="margin:18px 0 8px;font-size:0.92rem">📦 Backups disponibles</h3>
+    <div id="backupsList"></div>
+    
+    <div style="margin-top:14px;padding:10px;background:#fffbe6;border-left:3px solid #f1c40f;border-radius:6px;font-size:0.74rem">
+      💡 <strong>Bonnes pratiques :</strong>
+      <ul style="margin:6px 0 0 16px;padding:0">
+        <li>Backup auto quotidien : créé au premier lancement de l\'app chaque jour</li>
+        <li>Avant grosse modif : clique sur "Backup maintenant"</li>
+        <li>Backup sur le cloud : "Exporter en .json" et envoie-toi le fichier par mail/Drive</li>
+        <li>En cas de bug : restaure le backup de la veille</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
 </div>
 <div class="save-indicator" id="saveIndicator">Sauvegard&eacute; &#10003;</div>
 
@@ -1028,7 +1067,7 @@ function saveLS() {
 }
 function getLS(k, def) { try { var s=localStorage.getItem(k); return s?JSON.parse(s):def; } catch(e){return def;} }
 // Force reset si ancienne version détectée
-var appVersion = '2026-05-01-v12-totalenergies';
+var appVersion = '2026-05-01-v13-backup-auto';
 if (localStorage.getItem('ketty_version') !== appVersion) {
   // On efface seulement les ops/budgets pour appliquer les nouvelles données
   // MAIS on conserve les soldes saisis par l'utilisateur (Nickel, Revolut)
@@ -1996,19 +2035,29 @@ function loadPlanRecommande() {
 
 // ── SOLDE REVOLUT MODIFIABLE ──────────────────
 function resetAllSoldes() {
-  if (!confirm('⚠️ Réinitialiser TOUS les soldes à 0 ?\n\nCette action efface :\n- Solde Nickel\n- Solde Revolut\n- Toutes les opérations saisies manuellement\n\nLes opérations importées (mars, avril) restent.')) return;
+  if (!confirm('⚠️ Réinitialiser TOUS les soldes à 0 ?\n\nCette action efface :\n- Solde Nickel\n- Solde Revolut\n- Toutes les opérations saisies manuellement\n\nLes opérations importées (mars, avril) restent.\n\n💾 Un backup sera créé automatiquement avant reset.')) return;
+  // Backup de sécurité avant reset
+  try {
+    var key = 'ketty_backup_manual_avant-reset-' + new Date().toISOString().replace(/[:.]/g, '-');
+    localStorage.setItem(key, JSON.stringify(snapshotData()));
+  } catch(e){}
   localStorage.removeItem('ketty_nickel_solde');
   localStorage.removeItem('ketty_revolut');
   localStorage.removeItem('ketty_ops');
   localStorage.removeItem('ketty_budgets');
   localStorage.removeItem('ketty_enveloppes');
   localStorage.removeItem('ketty_objectifs');
-  alert('✅ Tout est réinitialisé. La page va recharger.');
+  alert('✅ Tout est réinitialisé. La page va recharger.\n\nSi tu changes d\'avis, va dans Backup pour restaurer.');
   location.reload(true);
 }
 
 function forceCacheClear() {
-  if (!confirm('🔄 Forcer une mise à jour complète de l\'app ?\n\nCela vide le cache du navigateur et recharge la dernière version depuis GitHub.')) return;
+  if (!confirm('🔄 Forcer une mise à jour complète de l\'app ?\n\nCela vide le cache du navigateur et recharge la dernière version depuis GitHub.\n\n💾 Tes soldes et opérations sont conservés.')) return;
+  // Backup de sécurité avant
+  try {
+    var key = 'ketty_backup_manual_avant-cache-clear-' + new Date().toISOString().replace(/[:.]/g, '-');
+    localStorage.setItem(key, JSON.stringify(snapshotData()));
+  } catch(e){}
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(function(regs){
       regs.forEach(function(r){ r.unregister(); });
@@ -3629,6 +3678,207 @@ function renderCalDetail(dateStr) {
   html += '</div>';
   return html;
 }
+
+
+// ── BACKUP AUTOMATIQUE ──────────────────────────────
+function snapshotData() {
+  // Capture l'état complet de l'app
+  return {
+    version: appVersion,
+    date: new Date().toISOString(),
+    soldeNickel: localStorage.getItem('ketty_nickel_solde') || '0',
+    soldeRevolut: localStorage.getItem('ketty_revolut') || '0',
+    ops: localStorage.getItem('ketty_ops') || '[]',
+    charges: localStorage.getItem('ketty_charges') || null,
+    budgets: localStorage.getItem('ketty_budgets') || '[]',
+    enveloppes: localStorage.getItem('ketty_env') || '[]',
+    objectifs: localStorage.getItem('ketty_objectifs') || '[]'
+  };
+}
+
+function getBackups() {
+  // Récupère la liste des backups, triés du plus récent au plus ancien
+  var backups = [];
+  for (var i = 0; i < localStorage.length; i++) {
+    var key = localStorage.key(i);
+    if (key && key.indexOf('ketty_backup_') === 0) {
+      try {
+        var data = JSON.parse(localStorage.getItem(key));
+        backups.push({key: key, data: data});
+      } catch(e) {}
+    }
+  }
+  backups.sort(function(a, b) { return b.data.date.localeCompare(a.data.date); });
+  return backups;
+}
+
+function autoBackup() {
+  // Création de la clé du jour
+  var today = new Date().toISOString().substring(0, 10); // YYYY-MM-DD
+  var key = 'ketty_backup_' + today;
+  
+  // Si un backup existe déjà pour aujourd'hui, ne rien faire (éviter les écritures multiples)
+  if (localStorage.getItem(key)) return;
+  
+  // Créer le snapshot
+  var snap = snapshotData();
+  try {
+    localStorage.setItem(key, JSON.stringify(snap));
+  } catch (e) {
+    // Quota dépassé : nettoyer un vieux backup et réessayer
+    cleanOldBackups(true);
+    try { localStorage.setItem(key, JSON.stringify(snap)); } catch (e2) {}
+    return;
+  }
+  
+  // Garder seulement les 7 derniers
+  cleanOldBackups();
+}
+
+function cleanOldBackups(aggressive) {
+  var backups = getBackups();
+  var maxKeep = aggressive ? 3 : 7;
+  if (backups.length > maxKeep) {
+    backups.slice(maxKeep).forEach(function(b) {
+      localStorage.removeItem(b.key);
+    });
+  }
+}
+
+function manualBackup() {
+  // Forcer un backup même si déjà fait aujourd'hui (utile avant grosse modif)
+  var key = 'ketty_backup_manual_' + new Date().toISOString().replace(/[:.]/g, '-');
+  var snap = snapshotData();
+  try {
+    localStorage.setItem(key, JSON.stringify(snap));
+    alert('✅ Backup manuel créé');
+    renderBackupsList();
+  } catch (e) {
+    alert('⚠️ Espace de stockage saturé. Supprime un ancien backup d\'abord.');
+  }
+}
+
+function exportBackupFile() {
+  // Télécharger un .json de l'état actuel
+  var snap = snapshotData();
+  var blob = new Blob([JSON.stringify(snap, null, 2)], {type: 'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'mon-compte-backup-' + new Date().toISOString().substring(0,10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importBackupFile(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var snap = JSON.parse(e.target.result);
+      if (!snap.ops || !snap.date) {
+        alert('⚠️ Fichier invalide. Ce n\'est pas un backup Mon Compte.');
+        return;
+      }
+      if (confirm('Restaurer le backup du ' + snap.date.substring(0,10) + ' ?\n\n⚠️ Toutes les données actuelles seront remplacées.')) {
+        restoreSnapshot(snap);
+      }
+    } catch (err) {
+      alert('⚠️ Erreur de lecture : ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function restoreSnapshot(snap) {
+  // Remplacer tout le localStorage par le snapshot
+  localStorage.setItem('ketty_nickel_solde', snap.soldeNickel || '0');
+  localStorage.setItem('ketty_revolut', snap.soldeRevolut || '0');
+  localStorage.setItem('ketty_ops', snap.ops || '[]');
+  if (snap.charges) localStorage.setItem('ketty_charges', snap.charges);
+  if (snap.budgets) localStorage.setItem('ketty_budgets', snap.budgets);
+  if (snap.enveloppes) localStorage.setItem('ketty_env', snap.enveloppes);
+  if (snap.objectifs) localStorage.setItem('ketty_objectifs', snap.objectifs);
+  alert('✅ Backup restauré. La page va recharger.');
+  setTimeout(function() { location.reload(true); }, 500);
+}
+
+function restoreBackup(key) {
+  var b = getBackups().find(function(x){return x.key === key;});
+  if (!b) { alert('Backup introuvable'); return; }
+  if (!confirm('Restaurer le backup du ' + b.data.date.substring(0,10) + ' ?\n\n⚠️ Toutes les données actuelles seront remplacées.\n\nUn backup automatique de l\'état actuel sera créé d\'abord (sécurité).')) return;
+  // Sauvegarder l'état actuel avant restauration
+  manualBackup();
+  // Restaurer
+  restoreSnapshot(b.data);
+}
+
+function deleteBackup(key) {
+  var b = getBackups().find(function(x){return x.key === key;});
+  if (!b) return;
+  if (!confirm('Supprimer le backup du ' + b.data.date.substring(0,10) + ' ?')) return;
+  localStorage.removeItem(key);
+  renderBackupsList();
+}
+
+function renderBackupsList() {
+  var el = document.getElementById('backupsList');
+  if (!el) return;
+  
+  var backups = getBackups();
+  
+  if (backups.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);text-align:center;padding:14px;font-size:0.85rem">Aucun backup pour l\'instant. Un backup sera créé automatiquement aujourd\'hui.</p>';
+    return;
+  }
+  
+  // Calculer la taille totale
+  var totalSize = 0;
+  backups.forEach(function(b){ totalSize += b.key.length + JSON.stringify(b.data).length; });
+  
+  var html = '<div style="background:var(--bg-light);padding:10px;border-radius:8px;margin-bottom:10px;font-size:0.78rem">';
+  html += '<strong>' + backups.length + ' backup(s)</strong> · Espace utilisé : ' + (totalSize/1024).toFixed(1) + ' KB';
+  html += '</div>';
+  
+  backups.forEach(function(b) {
+    var d = new Date(b.data.date);
+    var dateLib = d.toLocaleDateString('fr-FR', {day:'2-digit', month:'long', year:'numeric'});
+    var heureLib = d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+    var nbOps = 0;
+    try { nbOps = JSON.parse(b.data.ops).length; } catch(e){}
+    var manuel = b.key.indexOf('manual') >= 0;
+    
+    html += '<div style="border:1.5px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;background:white">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">';
+    html += '<div>';
+    html += '<div style="font-weight:600;font-size:0.9rem">' + (manuel ? '✋ ' : '🤖 ') + dateLib + '</div>';
+    html += '<div style="font-size:0.72rem;color:var(--muted)">' + heureLib + ' · ' + nbOps + ' opérations · v' + (b.data.version || 'inconnu') + '</div>';
+    if (b.data.soldeNickel || b.data.soldeRevolut) {
+      html += '<div style="font-size:0.72rem;color:var(--muted);margin-top:2px">';
+      html += '💳 ' + parseFloat(b.data.soldeNickel||'0').toFixed(2) + '€ · ';
+      html += '💛 ' + parseFloat(b.data.soldeRevolut||'0').toFixed(2) + '€';
+      html += '</div>';
+    }
+    html += '</div>';
+    html += '<span style="background:' + (manuel?'#fff3cd':'#d4e6f1') + ';color:' + (manuel?'#856404':'#1f618d') + ';padding:3px 8px;border-radius:6px;font-size:0.65rem;font-weight:600">' + (manuel ? 'Manuel' : 'Auto') + '</span>';
+    html += '</div>';
+    
+    html += '<div style="display:flex;gap:6px">';
+    html += '<button onclick="restoreBackup(\'' + b.key + '\')" style="flex:1;padding:7px;background:#27ae60;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">↺ Restaurer</button>';
+    html += '<button onclick="deleteBackup(\'' + b.key + '\')" style="flex:0 0 auto;padding:7px 12px;background:#e74c3c;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">🗑️</button>';
+    html += '</div>';
+    html += '</div>';
+  });
+  
+  el.innerHTML = html;
+}
+
+// Lancer le backup auto au démarrage
+setTimeout(autoBackup, 1000);
 
 </script>
 
