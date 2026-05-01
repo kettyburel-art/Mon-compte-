@@ -385,6 +385,7 @@ input:focus,select:focus{border-color:var(--accent);}
   <div class="tab" onclick="showPanel('objectif',this)">&#127919; Obj.</div>
   <div class="tab" onclick="showPanel('ajouter',this)">&#10133; Ajout</div>
   <div class="tab" onclick="showPanel('import',this)">&#128194; Import</div>
+  <div class="tab" onclick="showPanel('export',this)">&#128229; Export PDF</div>
 </div>
 
 <div class="main">
@@ -706,6 +707,53 @@ input:focus,select:focus{border-color:var(--accent);}
   </div>
 </div>
 
+<div id="panel-export" class="panel">
+  <div class="card-box">
+    <h2>📥 Export PDF mensuel</h2>
+    <p style="font-size:0.78rem;color:var(--muted);margin:0 0 14px">
+      Génère un rapport PDF de ta situation financière. Idéal pour archivage VAE ou suivi personnel.
+    </p>
+    
+    <div class="form-row">
+      <div>
+        <label>Mois à exporter</label>
+        <select id="expMois">
+          <option value="2026-01">Janvier 2026</option>
+          <option value="2026-02">Février 2026</option>
+          <option value="2026-03">Mars 2026</option>
+          <option value="2026-04" selected>Avril 2026</option>
+          <option value="2026-05">Mai 2026</option>
+        </select>
+      </div>
+      <div>
+        <label>Compte</label>
+        <select id="expCompte">
+          <option value="tous">Tous comptes</option>
+          <option value="nickel">💳 Nickel uniquement</option>
+          <option value="revolut">💛 Revolut uniquement</option>
+        </select>
+      </div>
+    </div>
+    
+    <h3 style="margin:18px 0 8px;font-size:0.92rem">📋 Récapitulatif (synthèse)</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="submit-btn" style="background:#34495e;font-size:0.78rem" onclick="generatePDF('recap','sobre')">📄 Sobre</button>
+      <button class="submit-btn" style="background:linear-gradient(135deg,#e07a3a,#d35400);font-size:0.78rem" onclick="generatePDF('recap','colore')">🎨 Coloré</button>
+    </div>
+    
+    <h3 style="margin:18px 0 8px;font-size:0.92rem">📑 Détaillé (toutes opérations)</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="submit-btn" style="background:#34495e;font-size:0.78rem" onclick="generatePDF('detail','sobre')">📄 Sobre</button>
+      <button class="submit-btn" style="background:linear-gradient(135deg,#e07a3a,#d35400);font-size:0.78rem" onclick="generatePDF('detail','colore')">🎨 Coloré</button>
+    </div>
+    
+    <p style="margin-top:14px;padding:10px;background:#fffbe6;border-left:3px solid #f1c40f;border-radius:6px;font-size:0.74rem">
+      💡 <strong>Conseil :</strong> Au clic, une nouvelle fenêtre d'aperçu s'ouvre. Utilise le bouton "Imprimer" puis 
+      "Enregistrer en PDF" comme destination pour télécharger le fichier.
+    </p>
+  </div>
+</div>
+
 </div>
 <div class="save-indicator" id="saveIndicator">Sauvegard&eacute; &#10003;</div>
 
@@ -765,7 +813,7 @@ function saveLS() {
 }
 function getLS(k, def) { try { var s=localStorage.getItem(k); return s?JSON.parse(s):def; } catch(e){return def;} }
 // Force reset si ancienne version détectée
-var appVersion = '2026-05-01-v6-import-csv';
+var appVersion = '2026-05-01-v7-export-pdf';
 if (localStorage.getItem('ketty_version') !== appVersion) {
   // On efface seulement les ops/budgets pour appliquer les nouvelles données
   // MAIS on conserve les soldes saisis par l'utilisateur (Nickel, Revolut)
@@ -2475,6 +2523,210 @@ function confirmImport() {
   
   // Aller voir les opérations
   showPanel('operations', null);
+}
+
+
+// ── EXPORT PDF ──────────────────────────────────────
+function generatePDF(typeRapport, style) {
+  var moisCible = document.getElementById('expMois').value;
+  var compteCible = document.getElementById('expCompte').value;
+  
+  // Filtrer les ops du mois et du compte
+  var opsMonth = ops.filter(function(o) {
+    if (o.date.indexOf(moisCible) !== 0) return false;
+    if (compteCible === 'tous') return true;
+    return (o.compte || 'nickel') === compteCible;
+  });
+  
+  if (opsMonth.length === 0) {
+    alert('Aucune opération pour ' + moisCible + ' sur ce compte.');
+    return;
+  }
+  
+  // Calculs
+  var revenus = opsMonth.filter(function(o){return o.montant>0;}).reduce(function(s,o){return s+o.montant;},0);
+  var depenses = opsMonth.filter(function(o){return o.montant<0;}).reduce(function(s,o){return s+Math.abs(o.montant);},0);
+  var solde = revenus - depenses;
+  
+  // Stats par catégorie (dépenses uniquement)
+  var byCategory = {};
+  opsMonth.filter(function(o){return o.montant<0;}).forEach(function(o) {
+    if (!byCategory[o.categorie]) byCategory[o.categorie] = {total:0, count:0};
+    byCategory[o.categorie].total += Math.abs(o.montant);
+    byCategory[o.categorie].count++;
+  });
+  var catSorted = Object.keys(byCategory).map(function(k) {
+    return {cat:k, total:byCategory[k].total, count:byCategory[k].count};
+  }).sort(function(a,b){return b.total-a.total;});
+  
+  // Stats par compte
+  var nickelDep = opsMonth.filter(function(o){return (o.compte||'nickel')==='nickel' && o.montant<0;}).reduce(function(s,o){return s+Math.abs(o.montant);},0);
+  var nickelRev = opsMonth.filter(function(o){return (o.compte||'nickel')==='nickel' && o.montant>0;}).reduce(function(s,o){return s+o.montant;},0);
+  var revolutDep = opsMonth.filter(function(o){return o.compte==='revolut' && o.montant<0;}).reduce(function(s,o){return s+Math.abs(o.montant);},0);
+  var revolutRev = opsMonth.filter(function(o){return o.compte==='revolut' && o.montant>0;}).reduce(function(s,o){return s+o.montant;},0);
+  
+  // Incidents bancaires
+  var incidents = opsMonth.filter(function(o){return o.categorie==='Incidents bancaires';});
+  var totalIncidents = incidents.reduce(function(s,o){return s+Math.abs(o.montant);},0);
+  
+  // Mois lisible
+  var moisNoms = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  var moisLib = moisNoms[parseInt(moisCible.split('-')[1])-1] + ' ' + moisCible.split('-')[0];
+  var compteLib = compteCible === 'tous' ? 'Tous comptes' : (compteCible === 'nickel' ? 'Nickel' : 'Revolut');
+  var dateGen = new Date().toLocaleDateString('fr-FR', {day:'2-digit', month:'long', year:'numeric'});
+  
+  // === GÉNÉRATION HTML DU PDF ===
+  var isColore = (style === 'colore');
+  var isDetail = (typeRapport === 'detail');
+  
+  // Couleurs selon style
+  var colors = isColore ? {
+    primary: '#e07a3a', secondary: '#d35400', dark: '#1a2540',
+    accent: '#f1c40f', success: '#27ae60', danger: '#e74c3c',
+    bgCard: '#fff8f3', bgHeader: 'linear-gradient(135deg, #1a2540 0%, #2c3e50 100%)',
+    textHeader: '#ffffff'
+  } : {
+    primary: '#2c3e50', secondary: '#34495e', dark: '#1a2540',
+    accent: '#7f8c8d', success: '#27ae60', danger: '#c0392b',
+    bgCard: '#f8f9fa', bgHeader: '#1a2540',
+    textHeader: '#ffffff'
+  };
+  
+  var css = `
+    @page { size: A4; margin: 12mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; color: #2c3e50; font-size: 10pt; line-height: 1.4; }
+    .pdf-container { max-width: 100%; }
+    .pdf-header { background: ${colors.bgHeader}; color: ${colors.textHeader}; padding: 18px 22px; border-radius: 8px; margin-bottom: 18px; }
+    .pdf-header h1 { font-size: 18pt; margin-bottom: 4px; ${isColore ? '' : 'font-weight: 600;'} }
+    .pdf-header .subtitle { font-size: 10pt; opacity: 0.85; }
+    .pdf-header .meta { margin-top: 8px; font-size: 8pt; opacity: 0.75; }
+    .section-title { color: ${colors.primary}; font-size: 12pt; font-weight: 600; margin: 18px 0 8px; padding-bottom: 4px; border-bottom: 2px solid ${colors.primary}; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .stat-card { background: ${colors.bgCard}; padding: 12px; border-radius: 6px; border-left: 3px solid ${colors.primary}; }
+    .stat-card .label { font-size: 8pt; color: #7f8c8d; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-card .value { font-size: 16pt; font-weight: 700; color: ${colors.dark}; margin: 3px 0 1px; }
+    .stat-card .sub { font-size: 8pt; color: #95a5a6; }
+    .stat-card.green { border-left-color: ${colors.success}; }
+    .stat-card.green .value { color: ${colors.success}; }
+    .stat-card.red { border-left-color: ${colors.danger}; }
+    .stat-card.red .value { color: ${colors.danger}; }
+    table { width: 100%; border-collapse: collapse; font-size: 9pt; margin-bottom: 12px; }
+    table th { background: ${colors.dark}; color: white; padding: 8px 6px; text-align: left; font-weight: 600; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.3px; }
+    table td { padding: 6px; border-bottom: 1px solid #ecf0f1; }
+    table tr:nth-child(even) td { background: #fafbfc; }
+    .amount-pos { color: ${colors.success}; font-weight: 600; font-family: monospace; text-align: right; }
+    .amount-neg { color: ${colors.danger}; font-weight: 600; font-family: monospace; text-align: right; }
+    .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 7pt; font-weight: 600; text-transform: uppercase; }
+    .badge.nickel { background: #d4e6f1; color: #1f618d; }
+    .badge.revolut { background: #fff3cd; color: #856404; }
+    .alert-box { background: #fff3cd; border-left: 4px solid #f39c12; padding: 10px 14px; border-radius: 4px; margin: 10px 0; font-size: 9pt; }
+    .alert-box.danger { background: #fee; border-left-color: #e74c3c; }
+    .footer { margin-top: 20px; padding-top: 10px; border-top: 1px solid #bdc3c7; font-size: 7pt; color: #95a5a6; text-align: center; }
+    .progress-bar { background: #ecf0f1; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+    .progress-fill { height: 100%; background: ${colors.primary}; }
+    .cat-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #ecf0f1; }
+    .cat-row .cat-name { flex: 0 0 160px; font-size: 9pt; }
+    .cat-row .cat-bar { flex: 1; }
+    .cat-row .cat-amt { flex: 0 0 80px; text-align: right; font-family: monospace; font-size: 9pt; font-weight: 600; }
+    @media print {
+      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .no-print { display: none !important; }
+    }
+  `;
+  
+  var html = '<div class="pdf-container">';
+  
+  // Header
+  html += '<div class="pdf-header">';
+  html += '<h1>' + (isColore ? '📊 ' : '') + 'Rapport ' + (isDetail ? 'détaillé' : 'récapitulatif') + ' — ' + moisLib + '</h1>';
+  html += '<div class="subtitle">Compte : ' + compteLib + ' · Ketty Burel</div>';
+  html += '<div class="meta">Généré le ' + dateGen + ' · Application Mon Compte</div>';
+  html += '</div>';
+  
+  // Vue d'ensemble
+  html += '<div class="section-title">' + (isColore?'💰 ':'') + 'Vue d\'ensemble</div>';
+  html += '<div class="grid-3">';
+  html += '<div class="stat-card green"><div class="label">Revenus</div><div class="value">+' + revenus.toFixed(2).replace('.',',') + '€</div><div class="sub">' + opsMonth.filter(function(o){return o.montant>0;}).length + ' opérations</div></div>';
+  html += '<div class="stat-card red"><div class="label">Dépenses</div><div class="value">-' + depenses.toFixed(2).replace('.',',') + '€</div><div class="sub">' + opsMonth.filter(function(o){return o.montant<0;}).length + ' opérations</div></div>';
+  html += '<div class="stat-card ' + (solde>=0?'green':'red') + '"><div class="label">Balance nette</div><div class="value">' + (solde>=0?'+':'') + solde.toFixed(2).replace('.',',') + '€</div><div class="sub">' + opsMonth.length + ' op. au total</div></div>';
+  html += '</div>';
+  
+  // Vue par compte si "tous"
+  if (compteCible === 'tous') {
+    html += '<div class="section-title">' + (isColore?'🏦 ':'') + 'Répartition par compte</div>';
+    html += '<div class="grid-2">';
+    html += '<div class="stat-card"><div class="label">💳 Nickel</div><div class="value" style="font-size:13pt">+' + nickelRev.toFixed(0) + ' / -' + nickelDep.toFixed(0) + '€</div><div class="sub">Net : ' + (nickelRev-nickelDep>=0?'+':'') + (nickelRev-nickelDep).toFixed(0) + '€</div></div>';
+    html += '<div class="stat-card"><div class="label">💛 Revolut</div><div class="value" style="font-size:13pt">+' + revolutRev.toFixed(0) + ' / -' + revolutDep.toFixed(0) + '€</div><div class="sub">Net : ' + (revolutRev-revolutDep>=0?'+':'') + (revolutRev-revolutDep).toFixed(0) + '€</div></div>';
+    html += '</div>';
+  }
+  
+  // Top catégories de dépenses
+  if (catSorted.length > 0) {
+    html += '<div class="section-title">' + (isColore?'📌 ':'') + 'Dépenses par catégorie</div>';
+    var maxCat = catSorted[0].total;
+    catSorted.slice(0, isDetail ? 999 : 8).forEach(function(c) {
+      var pct = Math.round((c.total / maxCat) * 100);
+      html += '<div class="cat-row">';
+      html += '<div class="cat-name">' + c.cat + ' <span style="color:#95a5a6;font-size:8pt">(' + c.count + ')</span></div>';
+      html += '<div class="cat-bar"><div class="progress-bar"><div class="progress-fill" style="width:' + pct + '%"></div></div></div>';
+      html += '<div class="cat-amt">' + c.total.toFixed(2).replace('.',',') + '€</div>';
+      html += '</div>';
+    });
+  }
+  
+  // Alertes / signaux
+  if (incidents.length > 0) {
+    html += '<div class="alert-box danger">';
+    html += '<strong>⚠️ Incidents bancaires :</strong> ' + incidents.length + ' rejet(s) ce mois pour un total de ' + totalIncidents.toFixed(2).replace('.',',') + '€.';
+    html += '</div>';
+  }
+  
+  // Détail des opérations (si rapport détaillé)
+  if (isDetail) {
+    html += '<div class="section-title">' + (isColore?'📋 ':'') + 'Détail des opérations</div>';
+    html += '<table>';
+    html += '<thead><tr><th>Date</th><th>Libellé</th><th>Catégorie</th><th>Compte</th><th style="text-align:right">Montant</th></tr></thead><tbody>';
+    var opsSorted = opsMonth.slice().sort(function(a,b){return a.date.localeCompare(b.date);});
+    opsSorted.forEach(function(o) {
+      var compte = (o.compte||'nickel');
+      html += '<tr>';
+      html += '<td>' + o.date.split('-').reverse().join('/') + '</td>';
+      html += '<td>' + (o.libelle.length > 40 ? o.libelle.substring(0,37) + '...' : o.libelle) + '</td>';
+      html += '<td style="font-size:8pt">' + o.categorie + '</td>';
+      html += '<td><span class="badge ' + compte + '">' + (compte==='nickel'?'Nickel':'Revolut') + '</span></td>';
+      html += '<td class="' + (o.montant>=0?'amount-pos':'amount-neg') + '">' + (o.montant>=0?'+':'') + o.montant.toFixed(2).replace('.',',') + '€</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+  }
+  
+  // Footer
+  html += '<div class="footer">';
+  html += 'Rapport ' + (isDetail?'détaillé':'récapitulatif') + ' généré par l\'application Mon Compte le ' + dateGen + ' · Ketty Burel · ' + moisLib;
+  html += '</div>';
+  
+  html += '</div>';
+  
+  // Ouvrir une nouvelle fenêtre d'impression
+  var w = window.open('', '_blank', 'width=900,height=1100');
+  if (!w) {
+    alert('⚠️ La fenêtre popup a été bloquée. Autorise les popups pour ce site.');
+    return;
+  }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rapport ' + moisLib + ' — ' + compteLib + '</title><style>' + css + '</style></head><body>' + html);
+  w.document.write('<div class="no-print" style="position:fixed;top:10px;right:10px;background:white;padding:12px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:9999;display:flex;gap:8px">');
+  w.document.write('<button onclick="window.print()" style="padding:10px 16px;background:#e07a3a;color:white;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">🖨️ Imprimer / PDF</button>');
+  w.document.write('<button onclick="window.close()" style="padding:10px 16px;background:#95a5a6;color:white;border:none;border-radius:6px;font-size:13px;cursor:pointer">✕ Fermer</button>');
+  w.document.write('</div>');
+  w.document.write('</body></html>');
+  w.document.close();
+  
+  // Auto-déclencher l'impression après 600ms
+  setTimeout(function(){
+    try { w.focus(); } catch(e) {}
+  }, 300);
 }
 
 </script>
