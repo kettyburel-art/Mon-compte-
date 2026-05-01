@@ -386,6 +386,7 @@ input:focus,select:focus{border-color:var(--accent);}
   <div class="tab" onclick="showPanel('ajouter',this)">&#10133; Ajout</div>
   <div class="tab" onclick="showPanel('import',this)">&#128194; Import</div>
   <div class="tab" onclick="showPanel('export',this)">&#128229; Export PDF</div>
+  <div class="tab" onclick="showPanel('charges',this)">&#9881;&#65039; Charges</div>
 </div>
 
 <div class="main">
@@ -754,6 +755,31 @@ input:focus,select:focus{border-color:var(--accent);}
   </div>
 </div>
 
+<div id="panel-charges" class="panel">
+  <div class="card-box">
+    <h2>⚙️ Charges fixes mensuelles</h2>
+    <p style="font-size:0.78rem;color:var(--muted);margin:0 0 12px">
+      Liste des prélèvements automatiques utilisée par l\'analyse de risque de rejet. 
+      Active/désactive ou modifie selon ta réalité.
+    </p>
+    
+    <div id="chargesEditList" style="margin-top:8px"></div>
+    
+    <button class="submit-btn" style="margin-top:14px;background:linear-gradient(135deg,#27ae60,#229954)" onclick="addCharge()">
+      ➕ Ajouter une charge
+    </button>
+    
+    <div style="margin-top:14px;padding:10px;background:#fffbe6;border-left:3px solid #f1c40f;border-radius:6px;font-size:0.74rem">
+      💡 Les charges désactivées ne comptent plus dans le calcul du risque de rejet. 
+      Utile pour les abonnements résiliés temporairement (ex: Audible en pause) ou les charges saisonnières (EDF).
+    </div>
+    
+    <button class="submit-btn" style="margin-top:14px;background:#7f8c8d;font-size:0.78rem" onclick="resetCharges()">
+      🔄 Restaurer les charges par défaut
+    </button>
+  </div>
+</div>
+
 </div>
 <div class="save-indicator" id="saveIndicator">Sauvegard&eacute; &#10003;</div>
 
@@ -782,15 +808,30 @@ function gi(c) { return CATS.icons[c] || '📋'; }
 function gc(c) { return CATS.colors[c] || '#95a5a6'; }
 
 var ML = {'2026-01':'Janvier','2026-02':'Février','2026-03':'Mars','2026-04':'Avril'};
-var CHARGES = [
-  {nom:'Avocat Me El Sargologo',montant:250,jour:10,icon:'⚖️'},
-  {nom:'EDF - URGENT',montant:329.82,jour:30,icon:'⚡'},
-  {nom:'Loyer ESH',montant:778,jour:10,icon:'🏠'},
-  {nom:'Navigo Annuel',montant:90.80,jour:12,icon:'🚇'},
-  {nom:'Bouygues (06)',montant:37,jour:9,icon:'📱'},
-  {nom:'Bouygues (09)',montant:36,jour:9,icon:'📱'},
-  {nom:'Acheel Assurance',montant:26.35,jour:5,icon:'💊'}
+var CHARGES_DEFAULT = [
+  {id:1,nom:'Loyer ESH',montant:778,jour:10,icon:'🏠',compte:'nickel',actif:true},
+  {id:2,nom:'Avocat Me El Sargologo',montant:250,jour:10,icon:'⚖️',compte:'nickel',actif:true,note:'Jusqu\'à mars 2027'},
+  {id:3,nom:'Navigo Annuel',montant:90.80,jour:12,icon:'🚇',compte:'nickel',actif:true},
+  {id:4,nom:'Bouygues (06)',montant:45.99,jour:14,icon:'📱',compte:'nickel',actif:true},
+  {id:5,nom:'Bouygues (09)',montant:47.98,jour:14,icon:'📱',compte:'nickel',actif:true},
+  {id:6,nom:'Acheel Assurance',montant:26.35,jour:15,icon:'💊',compte:'nickel',actif:true},
+  {id:7,nom:'Audible',montant:9.95,jour:15,icon:'📚',compte:'nickel',actif:true},
+  {id:8,nom:'Amazon Prime',montant:6.99,jour:30,icon:'📦',compte:'nickel',actif:true},
+  {id:9,nom:'EDF (provision)',montant:83,jour:5,icon:'⚡',compte:'nickel',actif:false,note:'À activer si facture'},
+  {id:10,nom:'Abonnement Premium Revolut',montant:9.99,jour:28,icon:'💛',compte:'revolut',actif:true}
 ];
+
+var CHARGES = (function(){
+  var saved = localStorage.getItem('ketty_charges');
+  if (saved) {
+    try { return JSON.parse(saved); } catch(e) { return CHARGES_DEFAULT.slice(); }
+  }
+  return CHARGES_DEFAULT.slice();
+})();
+
+function saveCHARGES() {
+  localStorage.setItem('ketty_charges', JSON.stringify(CHARGES));
+}
 
 var ops = [], budgets = [], enveloppes = [], nextId = 1000, currentSens = 'debit', simCatSel = null;
 
@@ -813,7 +854,7 @@ function saveLS() {
 }
 function getLS(k, def) { try { var s=localStorage.getItem(k); return s?JSON.parse(s):def; } catch(e){return def;} }
 // Force reset si ancienne version détectée
-var appVersion = '2026-05-01-v8-risque-rejet';
+var appVersion = '2026-05-01-v9-charges-editables';
 if (localStorage.getItem('ketty_version') !== appVersion) {
   // On efface seulement les ops/budgets pour appliquer les nouvelles données
   // MAIS on conserve les soldes saisis par l'utilisateur (Nickel, Revolut)
@@ -1292,7 +1333,9 @@ function updateSim() {
 
 // ── ALERTES ───────────────────────────────────
 function checkAlertes() {
-  var alertes=[], moisCur='2026-03', today=new Date(2026,2,25);
+  var alertes=[];
+  var today = new Date();
+  var moisCur = today.toISOString().substring(0,7); // YYYY-MM réel
   var allB=budgets.concat(enveloppes);
   allB.filter(function(b){return b.mois===moisCur;}).forEach(function(b){
     var dep=ops.filter(function(o){return o.date.indexOf(b.mois)===0&&o.categorie===b.cat&&o.montant<0;}).reduce(function(s,o){return s+Math.abs(o.montant);},0);
@@ -1301,10 +1344,11 @@ function checkAlertes() {
   });
   var rej=ops.filter(function(o){return o.date.indexOf(moisCur)===0&&o.libelle.toLowerCase().indexOf('rejet')>=0;});
   if(rej.length){var tr=rej.reduce(function(s,o){return s+Math.abs(o.montant);},0);alertes.push({type:'danger',icon:'❌',title:rej.length+' rejet(s) de prélèvement ce mois',desc:'Total frais : '+fmtA(tr)+'. Évitables en anticipant les dates.'});}
-  CHARGES.forEach(function(c){
-    var dateC=new Date(2026,2,c.jour);
-    var diff=Math.ceil((dateC-today)/86400000);
-    if(diff>0&&diff<=5) alertes.push({type:'warning',icon:c.icon,title:c.nom+' dans '+diff+' jour'+(diff>1?'s':''),desc:'Prélèvement de '+fmtA(c.montant)+' prévu le '+c.jour+' mars.'});
+  CHARGES.filter(function(c){return c.actif !== false;}).forEach(function(c){
+    var dateC = new Date(today.getFullYear(), today.getMonth(), c.jour);
+    if (dateC < today) dateC = new Date(today.getFullYear(), today.getMonth()+1, c.jour);
+    var diff = Math.ceil((dateC - today) / 86400000);
+    if (diff > 0 && diff <= 5) alertes.push({type:'warning',icon:c.icon||'💸',title:c.nom+' dans '+diff+' jour'+(diff>1?'s':''),desc:'Prélèvement de '+fmtA(c.montant)+' prévu le '+c.jour+'.'});
   });
   var temuDep=ops.filter(function(o){return o.date.indexOf(moisCur)===0&&(o.libelle.toLowerCase().indexOf('temu')>=0||o.libelle.toLowerCase().indexOf('klarna')>=0);}).reduce(function(s,o){return s+Math.abs(o.montant);},0);
   if(temuDep>80) alertes.push({type:'warning',icon:'📦',title:'Temu/Klarna : '+fmtA(temuDep)+' ce mois',desc:"Les achats fractionnés s'accumulent. Vérifie ce qui est encore en attente."});
@@ -1327,21 +1371,40 @@ function checkAlertes() {
   renderCharges();
 }
 function renderCharges() {
-  var today=new Date(2026,2,25);
-  var h='';
-  CHARGES.forEach(function(c){
-    var dateC=new Date(2026,2,c.jour);
-    var diff=Math.ceil((dateC-today)/86400000);
-    var badge,bc;
-    if(diff<0){badge='Passé';bc='ok';}
-    else if(diff===0){badge="Aujourd'hui !";bc='red';}
-    else if(diff<=3){badge='Dans '+diff+'j';bc='red';}
-    else if(diff<=7){badge='Dans '+diff+'j';bc='orange';}
-    else{badge='Dans '+diff+'j';bc='ok';}
-    h+='<div class="charge-item"><div><div class="charge-name">'+c.icon+' '+c.nom+'</div><div class="charge-date">Vers le '+c.jour+' mars</div></div>';
-    h+='<div style="text-align:right"><div class="charge-amount">-'+fmtA(c.montant)+'</div><span class="charge-soon '+bc+'">'+badge+'</span></div></div>';
+  var today = new Date();
+  var moisNoms = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+  var h = '';
+  // Filtrer les charges actives uniquement, triées par proximité
+  var charges = CHARGES.filter(function(c){return c.actif !== false;}).slice();
+  charges.forEach(function(c){
+    // Date de la prochaine occurrence
+    var dateC = new Date(today.getFullYear(), today.getMonth(), c.jour);
+    if (dateC < today) {
+      // Si le jour est passé, prendre le mois suivant
+      dateC = new Date(today.getFullYear(), today.getMonth()+1, c.jour);
+    }
+    c._dateC = dateC;
+    c._diff = Math.ceil((dateC - today) / 86400000);
   });
-  var el=document.getElementById('chargesList'); if(el)el.innerHTML=h;
+  charges.sort(function(a,b){return a._diff - b._diff;});
+  
+  charges.forEach(function(c){
+    var diff = c._diff;
+    var moisLib = moisNoms[c._dateC.getMonth()];
+    var badge, bc;
+    if (diff === 0) { badge = "Aujourd'hui !"; bc = 'red'; }
+    else if (diff <= 3) { badge = 'Dans ' + diff + 'j'; bc = 'red'; }
+    else if (diff <= 7) { badge = 'Dans ' + diff + 'j'; bc = 'orange'; }
+    else { badge = 'Dans ' + diff + 'j'; bc = 'ok'; }
+    var compte = (c.compte || 'nickel') === 'revolut' ? '💛' : '💳';
+    h += '<div class="charge-item"><div><div class="charge-name">' + (c.icon||'💸') + ' ' + c.nom + ' <span style="font-size:0.7rem">' + compte + '</span></div><div class="charge-date">Le ' + c.jour + ' ' + moisLib + '</div></div>';
+    h += '<div style="text-align:right"><div class="charge-amount">-' + fmtA(c.montant) + '</div><span class="charge-soon ' + bc + '">' + badge + '</span></div></div>';
+  });
+  if (charges.length === 0) {
+    h = '<p style="color:var(--muted);text-align:center;padding:14px;font-size:0.82rem">Aucune charge active. Va dans <strong>Charges</strong> pour en ajouter.</p>';
+  }
+  var el = document.getElementById('chargesList');
+  if (el) el.innerHTML = h;
 }
 
 function buildRaw() {
@@ -2759,7 +2822,8 @@ function analyseRisqueRejet() {
   var evenements = [];
   
   // Charges fixes à venir ce mois et le mois suivant
-  CHARGES.forEach(function(c) {
+  // Ne traiter que les charges actives et celles affectant le compte Nickel
+  CHARGES.filter(function(c){return c.actif !== false && (c.compte||'nickel') === 'nickel';}).forEach(function(c) {
     // Ce mois
     if (c.jour > jour) {
       var d = new Date(annee, mois, c.jour);
@@ -2902,6 +2966,140 @@ function renderPanelRisque() {
   html += '</div>';
   
   return html;
+}
+
+
+// ── GESTION CHARGES FIXES ──────────────────────────
+function renderChargesEdit() {
+  var el = document.getElementById('chargesEditList');
+  if (!el) return;
+  
+  var html = '';
+  // Trier par jour du mois
+  var sorted = CHARGES.slice().sort(function(a,b){return a.jour - b.jour;});
+  
+  sorted.forEach(function(c) {
+    var actif = c.actif !== false;
+    var compte = c.compte || 'nickel';
+    var compteLib = compte === 'nickel' ? '💳 Nickel' : '💛 Revolut';
+    var compteCol = compte === 'nickel' ? '#1f618d' : '#856404';
+    var compteBg = compte === 'nickel' ? '#d4e6f1' : '#fff3cd';
+    
+    html += '<div style="border:1.5px solid ' + (actif ? 'var(--border)' : '#e0e0e0') + ';border-radius:10px;padding:12px;margin-bottom:8px;background:' + (actif ? 'white' : '#f8f9fa') + ';' + (actif ? '' : 'opacity:0.65') + '">';
+    
+    // Ligne 1 : icône, nom, montant, jour
+    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">';
+    html += '<div style="font-size:1.3rem">' + (c.icon || '💸') + '</div>';
+    html += '<div style="flex:1">';
+    html += '<div style="font-weight:600;font-size:0.92rem">' + c.nom + '</div>';
+    html += '<div style="font-size:0.72rem;color:var(--muted)">Le ' + c.jour + ' du mois · ' + c.montant.toFixed(2).replace('.',',') + '€';
+    if (c.note) html += ' · <em>' + c.note + '</em>';
+    html += '</div>';
+    html += '</div>';
+    html += '<span style="background:' + compteBg + ';color:' + compteCol + ';padding:3px 8px;border-radius:6px;font-size:0.7rem;font-weight:600">' + compteLib + '</span>';
+    html += '</div>';
+    
+    // Ligne 2 : actions
+    html += '<div style="display:flex;gap:6px;margin-top:8px">';
+    html += '<button onclick="editCharge(' + c.id + ')" style="flex:1;padding:7px;background:#3498db;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">✏️ Modifier</button>';
+    html += '<button onclick="toggleCharge(' + c.id + ')" style="flex:1;padding:7px;background:' + (actif ? '#f39c12' : '#27ae60') + ';color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">' + (actif ? '⏸ Désactiver' : '▶ Activer') + '</button>';
+    html += '<button onclick="deleteCharge(' + c.id + ')" style="flex:0 0 auto;padding:7px 12px;background:#e74c3c;color:white;border:none;border-radius:6px;font-size:0.75rem;font-weight:600;cursor:pointer">🗑️</button>';
+    html += '</div>';
+    
+    html += '</div>';
+  });
+  
+  if (CHARGES.length === 0) {
+    html = '<p style="text-align:center;color:var(--muted);padding:20px">Aucune charge fixe configurée. Clique sur "Ajouter une charge" pour commencer.</p>';
+  }
+  
+  // Total mensuel actif
+  var totalActif = CHARGES.filter(function(c){return c.actif!==false;}).reduce(function(s,c){return s+c.montant;},0);
+  var totalNickel = CHARGES.filter(function(c){return c.actif!==false && (c.compte||'nickel')==='nickel';}).reduce(function(s,c){return s+c.montant;},0);
+  var totalRevolut = CHARGES.filter(function(c){return c.actif!==false && c.compte==='revolut';}).reduce(function(s,c){return s+c.montant;},0);
+  
+  html = '<div style="background:#f8f9fa;padding:12px;border-radius:8px;margin-bottom:12px;border-left:3px solid var(--primary)">' +
+         '<div style="font-size:0.85rem;color:var(--muted);margin-bottom:4px">Total mensuel des charges actives</div>' +
+         '<div style="font-size:1.4rem;font-weight:700;color:var(--dark)">-' + totalActif.toFixed(2).replace('.',',') + ' €</div>' +
+         '<div style="font-size:0.72rem;color:var(--muted);margin-top:4px">' +
+         '💳 Nickel : ' + totalNickel.toFixed(2).replace('.',',') + '€ · 💛 Revolut : ' + totalRevolut.toFixed(2).replace('.',',') + '€' +
+         '</div></div>' + html;
+  
+  el.innerHTML = html;
+}
+
+function nextChargeId() {
+  var maxId = 0;
+  CHARGES.forEach(function(c){ if (c.id > maxId) maxId = c.id; });
+  return maxId + 1;
+}
+
+function addCharge() {
+  var nom = prompt('Nom de la charge (ex: Spotify, Netflix, Loyer...) :');
+  if (!nom || !nom.trim()) return;
+  var montant = parseFloat((prompt('Montant en € :') || '').replace(',','.'));
+  if (isNaN(montant) || montant <= 0) { alert('Montant invalide.'); return; }
+  var jour = parseInt(prompt('Jour du mois où la charge est prélevée (1-31) :') || '0');
+  if (jour < 1 || jour > 31) { alert('Jour invalide.'); return; }
+  var compte = confirm('Charge sur compte Nickel ? (OK = Nickel, Annuler = Revolut)') ? 'nickel' : 'revolut';
+  
+  CHARGES.push({
+    id: nextChargeId(),
+    nom: nom.trim(),
+    montant: Math.round(montant*100)/100,
+    jour: jour,
+    icon: '💸',
+    compte: compte,
+    actif: true
+  });
+  saveCHARGES();
+  renderChargesEdit();
+  renderCharges(); // mise à jour de la liste accueil
+}
+
+function editCharge(id) {
+  var c = CHARGES.find(function(x){return x.id===id;});
+  if (!c) return;
+  var nom = prompt('Nom :', c.nom);
+  if (nom === null) return;
+  var montant = parseFloat((prompt('Montant en € :', c.montant) || '').replace(',','.'));
+  if (isNaN(montant) || montant <= 0) { alert('Montant invalide.'); return; }
+  var jour = parseInt(prompt('Jour du mois (1-31) :', c.jour) || '0');
+  if (jour < 1 || jour > 31) { alert('Jour invalide.'); return; }
+  
+  c.nom = nom.trim();
+  c.montant = Math.round(montant*100)/100;
+  c.jour = jour;
+  saveCHARGES();
+  renderChargesEdit();
+  renderCharges();
+}
+
+function toggleCharge(id) {
+  var c = CHARGES.find(function(x){return x.id===id;});
+  if (!c) return;
+  c.actif = c.actif === false ? true : false;
+  saveCHARGES();
+  renderChargesEdit();
+  renderCharges();
+}
+
+function deleteCharge(id) {
+  var c = CHARGES.find(function(x){return x.id===id;});
+  if (!c) return;
+  if (!confirm('Supprimer définitivement "' + c.nom + '" ?')) return;
+  CHARGES = CHARGES.filter(function(x){return x.id!==id;});
+  saveCHARGES();
+  renderChargesEdit();
+  renderCharges();
+}
+
+function resetCharges() {
+  if (!confirm('Restaurer la liste par défaut ? Tes modifications seront perdues.')) return;
+  CHARGES = CHARGES_DEFAULT.slice();
+  saveCHARGES();
+  renderChargesEdit();
+  renderCharges();
 }
 
 </script>
