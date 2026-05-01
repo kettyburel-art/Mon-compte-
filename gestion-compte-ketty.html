@@ -255,6 +255,66 @@ input:focus,select:focus{border-color:var(--accent);}
 }
 ::-webkit-scrollbar{width:4px;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* === FAB SAISIE RAPIDE === */
+.fab-quick {
+  position: fixed; bottom: 18px; right: 18px;
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(135deg, #e07a3a 0%, #d35400 100%);
+  color: white; border: none; font-size: 1.8rem;
+  box-shadow: 0 4px 14px rgba(224,122,58,0.5);
+  cursor: pointer; z-index: 999;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.2s;
+}
+.fab-quick:active { transform: scale(0.92); }
+.fab-quick:hover { transform: scale(1.05); }
+
+.qmodal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55); z-index: 1000;
+  align-items: flex-end; justify-content: center;
+}
+.qmodal-overlay.show { display: flex; }
+.qmodal {
+  background: white; width: 100%; max-width: 440px;
+  border-radius: 18px 18px 0 0; padding: 18px 16px 22px;
+  max-height: 88vh; overflow-y: auto;
+  animation: slideUp 0.25s ease-out;
+}
+@keyframes slideUp { from {transform: translateY(100%);} to {transform: translateY(0);} }
+.qmodal h3 { margin: 0 0 12px; font-size: 1rem; color: #1a2540; }
+.qmodal-shortcuts {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px; margin-bottom: 14px;
+}
+.qshortcut {
+  background: #f8f9fa; border: 2px solid #e9ecef;
+  border-radius: 10px; padding: 9px 6px; cursor: pointer;
+  text-align: center; transition: all 0.15s;
+  font-size: 0.72rem; color: #2c3e50;
+}
+.qshortcut:active { transform: scale(0.95); }
+.qshortcut.selected { background: #e07a3a; color: white; border-color: #d35400; }
+.qshortcut .qsi { display:block; font-size:1.3rem; margin-bottom:2px; }
+.qmodal-form { display: grid; gap: 8px; }
+.qmodal-form input, .qmodal-form select {
+  width: 100%; padding: 10px 12px; font-size: 0.9rem;
+  border: 1.5px solid #d0d7de; border-radius: 8px;
+}
+.qmodal-form input:focus, .qmodal-form select:focus {
+  outline: none; border-color: #e07a3a;
+}
+.qmodal-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.qmodal-actions { display: flex; gap: 8px; margin-top: 12px; }
+.qmodal-actions button {
+  flex: 1; padding: 11px; border-radius: 9px; font-size: 0.85rem;
+  font-weight: 600; border: none; cursor: pointer;
+}
+.qmodal-cancel { background: #e9ecef; color: #495057; }
+.qmodal-save { background: linear-gradient(135deg, #27ae60, #229954); color: white; }
+.qmodal-save:active { transform: scale(0.97); }
+
 </style>
 </head>
 <body>
@@ -658,13 +718,13 @@ function saveLS() {
 }
 function getLS(k, def) { try { var s=localStorage.getItem(k); return s?JSON.parse(s):def; } catch(e){return def;} }
 // Force reset si ancienne version détectée
-var appVersion = '2026-05-01-v4-final';
+var appVersion = '2026-05-01-v5-saisie-rapide';
 if (localStorage.getItem('ketty_version') !== appVersion) {
+  // On efface seulement les ops/budgets pour appliquer les nouvelles données
+  // MAIS on conserve les soldes saisis par l'utilisateur (Nickel, Revolut)
   localStorage.removeItem('ketty_ops');
   localStorage.removeItem('ketty_budgets');
   localStorage.removeItem('ketty_enveloppes');
-  localStorage.removeItem('ketty_revolut');
-  localStorage.removeItem('ketty_nickel_solde');
   localStorage.setItem('ketty_version', appVersion);
 }
 
@@ -840,7 +900,21 @@ function addOperation() {
   msg.style.color='var(--green)'; msg.textContent='✓ Enregistré !'; setTimeout(function(){msg.textContent='';},2500);
   saveLS(); updateSolde(); populateCatFilter(); renderStats(); checkAlertes();
 }
-function deleteOp(id) { ops=ops.filter(function(o){return o.id!==id;}); saveLS(); renderOps(); updateSolde(); renderStats(); }
+function deleteOp(id) {
+  var op = ops.find(function(o){return o.id===id;});
+  if (op && op.source === 'user') {
+    // Reverser l'effet sur le solde du compte
+    var soldeKey = op.compte === 'revolut' ? 'ketty_revolut' : 'ketty_nickel_solde';
+    var soldeCur = parseFloat(localStorage.getItem(soldeKey) || '0');
+    var nouveauSolde = Math.round((soldeCur - op.montant)*100)/100;
+    localStorage.setItem(soldeKey, nouveauSolde.toFixed(2));
+  }
+  ops = ops.filter(function(o){return o.id!==id;});
+  saveLS();
+  renderOps();
+  updateSolde();
+  renderStats();
+}
 
 // ── CATEGORIES ────────────────────────────────
 function renderCats() {
@@ -1965,7 +2039,156 @@ function renderSimulation() {
   el.innerHTML = h;
 }
 
+// ── SAISIE RAPIDE (FAB) ──────────────────────────
+var QUICK_SHORTCUTS = [
+  {label:'Franprix', cat:'Alimentation', mode:'CB', icon:'🛒'},
+  {label:'Le Condorcet', cat:'Tabac / Presse', mode:'CB', icon:'🚬'},
+  {label:'La Bonne Fortune', cat:'Tabac / Presse', mode:'CB', icon:'🚬'},
+  {label:'Carrefour', cat:'Alimentation', mode:'CB', icon:'🛒'},
+  {label:'SC-Riquet', cat:'Alimentation', mode:'CB', icon:'🛒'},
+  {label:'Uber Eats', cat:'Restauration / Livraison', mode:'CB', icon:'🍔'}
+];
+
+function openQuickAdd() {
+  // Pré-remplir la date du jour
+  document.getElementById('qDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('qLibelle').value = '';
+  document.getElementById('qMontant').value = '';
+  document.getElementById('qCat').value = 'Alimentation';
+  document.getElementById('qCompte').value = 'nickel';
+  document.getElementById('qMode').value = 'CB';
+  document.getElementById('qSens').value = 'debit';
+  
+  // Render raccourcis
+  var shHtml = '';
+  QUICK_SHORTCUTS.forEach(function(s, i) {
+    shHtml += '<div class="qshortcut" onclick="selectQuickShortcut(' + i + ',this)">';
+    shHtml += '<span class="qsi">' + s.icon + '</span>' + s.label;
+    shHtml += '</div>';
+  });
+  document.getElementById('qShortcuts').innerHTML = shHtml;
+  
+  document.getElementById('qmodalOverlay').classList.add('show');
+  // Focus sur montant après 200ms (laisser l'animation finir)
+  setTimeout(function(){ document.getElementById('qMontant').focus(); }, 200);
+}
+
+function closeQuickAdd() {
+  document.getElementById('qmodalOverlay').classList.remove('show');
+}
+
+function selectQuickShortcut(i, el) {
+  var s = QUICK_SHORTCUTS[i];
+  document.getElementById('qLibelle').value = s.label;
+  document.getElementById('qCat').value = s.cat;
+  document.getElementById('qMode').value = s.mode;
+  // Visual feedback
+  document.querySelectorAll('.qshortcut').forEach(function(e){ e.classList.remove('selected'); });
+  el.classList.add('selected');
+  // Focus sur le montant
+  document.getElementById('qMontant').focus();
+}
+
+function saveQuickAdd() {
+  var lib = document.getElementById('qLibelle').value.trim();
+  var mr = parseFloat(document.getElementById('qMontant').value);
+  var date = document.getElementById('qDate').value;
+  var cat = document.getElementById('qCat').value;
+  var mode = document.getElementById('qMode').value;
+  var sens = document.getElementById('qSens').value;
+  var compte = document.getElementById('qCompte').value;
+  
+  if (!lib || isNaN(mr) || mr <= 0 || !date) {
+    alert('⚠️ Libellé, montant et date sont requis.');
+    return;
+  }
+  
+  var montant = sens === 'debit' ? -Math.abs(mr) : Math.abs(mr);
+  var newOp = {
+    id: nextId++,
+    date: date,
+    libelle: lib,
+    montant: Math.round(montant*100)/100,
+    categorie: cat,
+    mode: mode,
+    compte: compte,
+    note: '',
+    source: 'user',
+    sens: sens
+  };
+  ops.push(newOp);
+  
+  // Mettre à jour automatiquement le solde du compte concerné
+  var soldeKey = compte === 'revolut' ? 'ketty_revolut' : 'ketty_nickel_solde';
+  var soldeCur = parseFloat(localStorage.getItem(soldeKey) || '0');
+  var nouveauSolde = Math.round((soldeCur + montant)*100)/100;
+  localStorage.setItem(soldeKey, nouveauSolde.toFixed(2));
+  
+  saveLS();
+  updateSolde();
+  populateCatFilter();
+  renderStats();
+  if (document.querySelector('#panel-accueil:not(.hidden)') || document.querySelector('#panel-accueil.active')) renderAccueil();
+  if (document.querySelector('#panel-operations:not(.hidden)')) renderOps();
+  checkAlertes();
+  showSave();
+  closeQuickAdd();
+}
+
 </script>
+
+
+<!-- Bouton flottant + saisie rapide -->
+<button class="fab-quick" onclick="openQuickAdd()" title="Saisie rapide">+</button>
+
+<div class="qmodal-overlay" id="qmodalOverlay" onclick="if(event.target===this)closeQuickAdd()">
+  <div class="qmodal">
+    <h3>⚡ Saisie rapide</h3>
+    <div class="qmodal-shortcuts" id="qShortcuts"></div>
+    <div class="qmodal-form">
+      <input type="text" id="qLibelle" placeholder="Libellé (ex: Franprix)">
+      <div class="qmodal-row2">
+        <input type="number" id="qMontant" step="0.01" placeholder="Montant €" inputmode="decimal">
+        <input type="date" id="qDate">
+      </div>
+      <div class="qmodal-row2">
+        <select id="qCat">
+          <option>Alimentation</option><option>Tabac / Presse</option>
+          <option>Restauration / Livraison</option><option>Transport</option>
+          <option>Courses en ligne</option><option>Shopping autres</option>
+          <option>Logement</option><option>Téléphonie</option>
+          <option>Abonnements</option><option>Santé / Bien-être</option>
+          <option>Travaux / Maison</option><option>Animaux / Sam</option>
+          <option>Frais juridiques</option><option>Salaire / Revenus</option>
+          <option>CAF / Aides</option><option>Remboursements</option>
+          <option>Retraits</option><option>Virements reçus</option>
+          <option>Virements envoyés</option><option>Incidents bancaires</option>
+          <option>Divers</option>
+        </select>
+        <select id="qCompte">
+          <option value="nickel">💳 Nickel</option>
+          <option value="revolut">💛 Revolut</option>
+        </select>
+      </div>
+      <div class="qmodal-row2">
+        <select id="qMode">
+          <option value="CB">CB</option>
+          <option value="Especes">Espèces</option>
+          <option value="Virement">Virement</option>
+          <option value="Prelevement">Prélèvement</option>
+        </select>
+        <select id="qSens">
+          <option value="debit">↓ Débit</option>
+          <option value="credit">↑ Crédit</option>
+        </select>
+      </div>
+    </div>
+    <div class="qmodal-actions">
+      <button class="qmodal-cancel" onclick="closeQuickAdd()">Annuler</button>
+      <button class="qmodal-save" onclick="saveQuickAdd()">✓ Enregistrer</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
