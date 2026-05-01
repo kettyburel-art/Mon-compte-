@@ -965,7 +965,7 @@ var CHARGES_DEFAULT = [
   {id:6,nom:'Acheel Assurance',montant:26.35,jour:15,icon:'💊',compte:'nickel',actif:true,type:'prelevement'},
   {id:7,nom:'Audible',montant:9.95,jour:15,icon:'📚',compte:'nickel',actif:true,type:'prelevement'},
   {id:8,nom:'Amazon Prime',montant:6.99,jour:30,icon:'📦',compte:'nickel',actif:true,type:'prelevement'},
-  {id:9,nom:'EDF (provision)',montant:83,jour:5,icon:'⚡',compte:'nickel',actif:false,type:'prelevement',note:'À activer si facture'},
+  {id:9,nom:'TotalEnergies (élec+gaz)',montant:80,jour:11,icon:'⚡',compte:'nickel',actif:true,type:'prelevement',note:'37€ élec + 43€ gaz · Régularisation 12e mois · Parrainage Florent Francietta'},
   {id:10,nom:'Abonnement Premium Revolut',montant:9.99,jour:28,icon:'💛',compte:'revolut',actif:true,type:'prelevement'}
 ];
 
@@ -977,11 +977,26 @@ var CHARGES = (function(){
       // Migration : ajouter le champ type si absent (anciennes versions)
       arr.forEach(function(c){
         if (!c.type) {
-          // Détection auto : si le nom contient loyer ou avocat → virement, sinon prelevement
           var n = (c.nom || '').toLowerCase();
           c.type = (n.indexOf('loyer') >= 0 || n.indexOf('avocat') >= 0) ? 'virement' : 'prelevement';
         }
       });
+      // Migration v12 : remplacer EDF par TotalEnergies
+      var migratedTotal = false;
+      arr.forEach(function(c){
+        if (c.id === 9 && (c.nom || '').toLowerCase().indexOf('edf') >= 0 && !c.migratedTotal) {
+          c.nom = 'TotalEnergies (élec+gaz)';
+          c.montant = 80;
+          c.jour = 11;
+          c.actif = true;
+          c.note = '37€ élec + 43€ gaz · Régularisation 12e mois · Parrainage Florent Francietta';
+          c.migratedTotal = true;
+          migratedTotal = true;
+        }
+      });
+      if (migratedTotal) {
+        try { localStorage.setItem('ketty_charges', JSON.stringify(arr)); } catch(e){}
+      }
       return arr;
     } catch(e) { return CHARGES_DEFAULT.slice(); }
   }
@@ -1013,7 +1028,7 @@ function saveLS() {
 }
 function getLS(k, def) { try { var s=localStorage.getItem(k); return s?JSON.parse(s):def; } catch(e){return def;} }
 // Force reset si ancienne version détectée
-var appVersion = '2026-05-01-v11-virements-manuels';
+var appVersion = '2026-05-01-v12-totalenergies';
 if (localStorage.getItem('ketty_version') !== appVersion) {
   // On efface seulement les ops/budgets pour appliquer les nouvelles données
   // MAIS on conserve les soldes saisis par l'utilisateur (Nickel, Revolut)
